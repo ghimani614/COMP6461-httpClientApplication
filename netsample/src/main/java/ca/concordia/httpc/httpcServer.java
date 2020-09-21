@@ -10,6 +10,8 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ForkJoinPool;
 
 import static java.util.Arrays.asList;
@@ -23,13 +25,18 @@ public class httpcServer {
             ByteBuffer buf = ByteBuffer.allocate(1024);
             for (; ; ) {
                 int nr = client.read(buf);
-
+                String requestString = new String(buf.array(), StandardCharsets.UTF_8);
+                System.out.println("Client request: " + requestString);
                 if (nr == -1)
                     break;
 
                 if (nr > 0) {
+                    buf.clear();
+                    buf.put(requestString.getBytes());
+
                     // ByteBuffer is tricky, you have to flip when switch from read to write, or vice-versa
                     buf.flip();
+
                     client.write(buf);
                     buf.clear();
                 }

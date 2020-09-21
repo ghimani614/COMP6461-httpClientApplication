@@ -19,15 +19,28 @@ public class httpc {
 
     // readFully reads until the request is fulfilled or the socket is closed
     private static void readFully(SocketChannel socket, ByteBuffer buf, int size) throws IOException {
-        while (buf.position() < size) {
-            int n = socket.read(buf);
-            if (n == -1) {
-                break;
-            }
-        }
-        if (buf.position() != size) {
-            throw new EOFException();
-        }
+        size = buf.remaining();
+//        System.out.println(size + " ??????????");
+//        System.out.println(" **** ");
+//        System.out.println(buf.position() + " ??????????");
+        socket.read(buf);
+//        System.out.println(buf.position() + " ^");
+//        System.out.println(buf.remaining() + " ??????????");
+
+
+//        while (buf.position() < size) {
+//            int n = socket.read(buf);
+//            System.out.println(buf.position() + " {{{{");
+//            System.out.println(n + " ))))))");
+//            if (n == -1) {
+//                System.out.println("bbbbbb");
+//                break;
+//            }
+//        }
+//
+//        if (buf.position() != size) {
+//            throw new EOFException();
+//        }
     }
 
     private static void readEchoAndRepeat(SocketChannel socket) throws IOException {
@@ -35,14 +48,17 @@ public class httpc {
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
-            ByteBuffer buf = utf8.encode(line);
+//            ByteBuffer buf = utf8.encode(line);
+            ByteBuffer buf = ByteBuffer.allocate(1024);
+            buf.put(line.getBytes());
+            buf.flip();
             int n = socket.write(buf);
             buf.clear();
 
             // Receive all what we have sent
             readFully(socket, buf, n);
             buf.flip();
-            System.out.println("Replied: " + utf8.decode(buf));
+            System.out.println("Response: " + utf8.decode(buf));
         }
     }
 
