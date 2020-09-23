@@ -26,9 +26,8 @@ public class PostRequest {
 		for (int i = 2; i < args.length; i++) {
             if (args[i].equals("-h")) {
                 String pair = args[i + 1].replaceAll("\'", "");
-                ;
                 if (!pair.contains(":")) {
-                    System.out.println("invalid parameter format");
+                    System.out.println("Invalid Format");
                     return null;
                 }
                 String[] param = pair.split(":", 2);
@@ -47,9 +46,9 @@ public class PostRequest {
                 File file = new File("src/" + filePath);
                 if (file.exists()) {
                     BufferedReader in = new BufferedReader(new FileReader("src/" + filePath));
-                    String str;
-                    while ((str = in.readLine()) != null) {
-                        content += str;
+                    String string;
+                    while ((string = in.readLine()) != null) {
+                        content += string;
                     }
                 }
             } catch (Exception e) {
