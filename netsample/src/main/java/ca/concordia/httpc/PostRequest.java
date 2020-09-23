@@ -2,12 +2,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 
-import clientlibrary.PostRequest;
-
 public class PostRequest {
 
 	public String HTTPMethods = "POST";
 	
+	//received POST request, analyses it.
 	public static PostRequest requestBuilder(String[] args) {
 		
 		PostRequest request = new PostRequest();
