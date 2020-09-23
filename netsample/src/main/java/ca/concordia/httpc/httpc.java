@@ -19,7 +19,7 @@ public class httpc {
 
     // readFully reads until the request is fulfilled or the socket is closed
     private static void readFully(SocketChannel socket, ByteBuffer buf, int size) throws IOException {
-        size = buf.remaining();
+//        size = buf.remaining();
 //        System.out.println(size + " ??????????");
 //        System.out.println(" **** ");
 //        System.out.println(buf.position() + " ??????????");
@@ -50,15 +50,19 @@ public class httpc {
             String line = scanner.nextLine();
 //            ByteBuffer buf = utf8.encode(line);
             ByteBuffer buf = ByteBuffer.allocate(1024);
-            buf.put(line.getBytes());
-            buf.flip();
-            int n = socket.write(buf);
+
+            int n = socket.write(ByteBuffer.wrap(line.getBytes(StandardCharsets.UTF_8)));
             buf.clear();
 
             // Receive all what we have sent
             readFully(socket, buf, n);
             buf.flip();
             System.out.println("Response: " + utf8.decode(buf));
+
+            buf.clear();
+            buf.position(0);
+            for (int i = 0; i < buf.array().length; i++)
+                buf.put((byte)0);
         }
     }
 
