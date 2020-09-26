@@ -57,7 +57,7 @@ public class httpc {
             // Receive all what we have sent
             readFully(socket, buf, n);
             buf.flip();
-            System.out.println("Response: " + utf8.decode(buf));
+            System.out.println("Response:\n" + utf8.decode(buf));
 
             buf.clear();
             buf.position(0);
