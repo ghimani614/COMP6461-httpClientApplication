@@ -1,15 +1,15 @@
 package ca.concordia.httpc;
 
-import com.sun.org.apache.xml.internal.security.utils.HelperNodeList;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.URL;
-import java.net.URLConnection;
+import java.io.InputStreamReader;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -73,6 +73,8 @@ public class httpcServer {
             if (commandLineStringArray[0].compareTo("httpc") != 0) {
                 return "Invalid syntax";
             } else {
+                String urlString;
+
                 if (commandLineStringArray.length == 2) {
                     if (compareStringsWithChar("help", commandLineStringArray[1]))
                         return "httpc is a curl-like application but supports HTTP protocol only.\nUsage:\n    httpc command [arguments]\nThe commands are:\n    get executes a HTTP GET request and prints the response.\n    post executes a HTTP POST request and prints the response.\n    help prints this screen.\n\n" +
@@ -80,61 +82,145 @@ public class httpcServer {
                 } else if (commandLineStringArray.length > 2) {
                     if (compareStringsWithChar("help", commandLineStringArray[1])) {
                         if (compareStringsWithChar("get", commandLineStringArray[2]))
-                            return "usage: httpc get [-v] [-h key:value] URL \n" +
-                                    "Get executes a HTTP GET request for a given URL.\nGet executes a HTTP GET request for a given URL.\n\n   -v             Prints the detail of the response such as protocol, status, and headers.\n   -h key:value   Associates headers to HTTP Request with the format 'key:value'.";
+                            return "usage: httpc get [-v] [-h key:value] URL \n\n" + "Get executes a HTTP GET request for a given URL.\n\n   -v             Prints the detail of the response such as protocol, status, and headers.\n   -h key:value   Associates headers to HTTP Request with the format 'key:value'.";
                         else if (compareStringsWithChar("post", commandLineStringArray[2]))
-                            return "usage: httpc post [-v] [-h key:value] [-d inline-data] [-f file] URL\n\nPost executes a HTTP POST request for a given URL with inline data or from file.\n\n   -v             Prints the detail of the response such as protocol, status, and headers.\n   -h key:value   Associates headers to HTTP Request with the format 'key:value'.\n   -d string      Associates an inline data to the body HTTP POST request.\n   -f file        Associates an inline data to the body HTTP POST request.\n\nEither [-d] or [-f] can be used but not both.";
+                            return "usage: httpc post [-v] [-h key:value] [-d inline-data] [-f file] URL\n\nPost executes a HTTP POST request for a given URL with inline data or from file.\n\n   -v             Prints the detail of the response such as protocol, status, and headers.\n   -h key:value   Associates headers to HTTP Request with the format 'key:value'.\n   -d string      Associates an inline data to the body HTTP POST request.\n   -f file        Associates the content of a file to the body HTTP POST request.\n\nEither [-d] or [-f] can be used but not both.";
 
                         return "Invalid syntax";
                     } else if (compareStringsWithChar("get", commandLineStringArray[1])) {
-                        String urlString;
-
-                        // httpc get -v url
                         if (compareStringsWithChar("-v", commandLineStringArray[2])) {
+                            // httpc get -v url
+
                             // Remove the apostrophes around the url
                             urlString = commandLineStringArray[3].replaceAll("'", "");
 
-                            return getHeaderValueByKey(urlString, null) + "\nServer: " + getHeaderValueByKey(urlString, "Server") + "\nDate: " + getHeaderValueByKey(urlString, "Date") + "\nContent-Type: " + getHeaderValueByKey(urlString, "Content-Type") + "\nContent-Length: " + getHeaderValueByKey(urlString, "Content-Length") + "\nConnection: " + getHeaderValueByKey(urlString, "Connection") + "\nAccess-Control-Allow-Origin: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Origin") + "\nAccess-Control-Allow-Credentials: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Credentials");
-                        }
-                        // httpc get -h url
-                        else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
-                            String[] keyValueString = commandLineStringArray[3].split(":");
+                            return getHeaderValueByKey(urlString, null) + "\nServer: " + getHeaderValueByKey(urlString, "Server") + "\nDate: " + getHeaderValueByKey(urlString, "Date") + "\nContent-Type: " + getHeaderValueByKey(urlString, "Content-Type") + "\nContent-Length: " + getHeaderValueByKey(urlString, "Content-Length") + "\nConnection: " + getHeaderValueByKey(urlString, "Connection") + "\nAccess-Control-Allow-Origin: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Origin") + "\nAccess-Control-Allow-Credentials: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Credentials") + "\n" + getHttpResponse(urlString);
+                        } else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
+                            // httpc get -h key:value url
+
+                            // Check if it contains the minimum number of terms
+                            if (commandLineStringArray.length < 5)
+                                return "Invalid syntax";
 
                             // Remove empty bytes from the string
-                            commandLineStringArray[4] = commandLineStringArray[4].replaceAll("\u0000.*", "");
+                            commandLineStringArray[commandLineStringArray.length - 1] = commandLineStringArray[commandLineStringArray.length - 1].replaceAll("\u0000.*", "");
 
-                            System.out.println("Merde " + commandLineStringArray[4] + " % " + commandLineStringArray[4].charAt(0) + " * " + commandLineStringArray[4].charAt(commandLineStringArray[4].length() - 1));
-                            // Check the url format
-                            if (commandLineStringArray[4].charAt(0) == 39 & commandLineStringArray[4].charAt(commandLineStringArray[4].length() - 1) == 39) {
+                            // Check the url format, it should wrapped by a pair of apostrophes
+                            if (commandLineStringArray[commandLineStringArray.length - 1].charAt(0) == 39 & commandLineStringArray[commandLineStringArray.length - 1].charAt(commandLineStringArray[commandLineStringArray.length - 1].length() - 1) == 39) {
                                 // Remove the apostrophes around the url
-                                urlString = commandLineStringArray[4].replaceAll("'", "");
-                                System.out.println("Merde? " + urlString);
-                                return keyValueString[0] + ": " + getHeaderValueByKey(urlString, keyValueString[0]);
+                                urlString = commandLineStringArray[commandLineStringArray.length - 1].replaceAll("'", "");
                             } else {
                                 return "Invalid syntax";
                             }
+
+                            String returnString = "";
+
+                            // There could be multiple header parameters for httpc get -h
+                            for (int index = 3; index < commandLineStringArray.length - 1; index++) {
+                                boolean hasOneColon = false;
+
+                                // Check if there is only one colon, otherwise it is invalid syntax
+                                for (int characterIndex = 0; characterIndex < commandLineStringArray[index].length() - 1; characterIndex++) {
+                                    if (commandLineStringArray[index].charAt(characterIndex) == ':') {
+                                        if (!hasOneColon)
+                                            hasOneColon = true;
+                                        else
+                                            return "Invalid syntax";
+                                    }
+                                }
+
+                                String[] keyValueString = commandLineStringArray[index].split(":");
+
+                                // Append each key search to the return string
+                                returnString += keyValueString[0] + ": " + getHeaderValueByKey(urlString, keyValueString[0]);
+
+                                // Append a new line except for the last line
+                                if (index != commandLineStringArray.length - 2)
+                                    returnString += "\n";
+                            }
+
+                            return returnString;
                         } else {
+                            // httpc get url
+
                             // Ensure it is not an empty url
                             if (!compareStringsWithChar("", commandLineStringArray[2])) {
-                                // Check the url format
+                                // Remove empty bytes from the string
+                                commandLineStringArray[2] = commandLineStringArray[2].replaceAll("\u0000.*", "");
+
+                                // Check the url format, it should wrapped by a pair of apostrophes
                                 if (commandLineStringArray[2].charAt(0) == 39 & commandLineStringArray[2].charAt(commandLineStringArray[2].length() - 1) == 39) {
                                     // Remove the apostrophes around the url
                                     urlString = commandLineStringArray[2].replaceAll("'", "");
+
+                                    return getHttpResponse(urlString);
+                                } else {
+                                    return "Invalid syntax";
                                 }
                             }
                         }
+                    } else if (compareStringsWithChar("-v", commandLineStringArray[1])) {
+                        // httpc -v url -o file.txt
 
-                        return "Invalid syntax";
+                        // Check if it contains the exact number of terms
+                        if (commandLineStringArray.length != 5)
+                            return "Invalid syntax";
+
+                        // Remove empty bytes from the string
+                        commandLineStringArray[2] = commandLineStringArray[2].replaceAll("\u0000.*", "");
+
+                        // Check the url format, it should wrapped by a pair of apostrophes
+                        if (commandLineStringArray[2].charAt(0) == 39 & commandLineStringArray[2].charAt(commandLineStringArray[2].length() - 1) == 39) {
+                            // Remove the apostrophes around the url
+                            urlString = commandLineStringArray[2].replaceAll("'", "");
+                        } else {
+                            return "Invalid syntax";
+                        }
+
+                        // The fourth term should be -o without any exception
+                        if (!compareStringsWithChar("-o", commandLineStringArray[3]))
+                            return "Invalid syntax";
+
+                        // Remove empty bytes from the file name string
+                        String fileName = commandLineStringArray[4].replaceAll("\u0000.*", "");
+
+                        // Write to file
+                        boolean result = writeToTextFile(fileName, getHttpResponse(urlString));
+
+                        if (result)
+                            return "Successfully wrote response to the file.";
+                        else
+                            return "Failed to write the file.";
                     }
-
-                    return "Invalid syntax";
                 }
-
-                return "Invalid syntax";
             }
+
+            return "Invalid syntax";
         } else {
             return "Invalid syntax";
         }
+    }
+
+    private String getHttpResponse(String urlString) {
+        StringBuilder stringBuilder;
+
+        try {
+            stringBuilder = new StringBuilder();
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String line;
+
+            while ((line = bufferedReader.readLine()) != null)
+                stringBuilder.append(line + "\n");
+
+            bufferedReader.close();
+        } catch (Exception e) {
+            return "Get Http response error";
+        }
+
+        return stringBuilder.toString();
     }
 
     private String getHeaderValueByKey(String urlString, String keyString) {
@@ -154,6 +240,22 @@ public class httpcServer {
         }
 
         return "Not found";
+    }
+
+    private boolean writeToTextFile(String fileNameString, String contentString) {
+        try {
+            FileWriter myWriter = new FileWriter(fileNameString);
+            myWriter.write(contentString);
+            myWriter.close();
+            System.out.println("Successfully wrote response to the file.");
+        } catch (IOException e) {
+            System.out.println("Failed to write the file.");
+            e.printStackTrace();
+
+            return false;
+        }
+
+        return true;
     }
 
     private boolean compareStringsWithChar(String string1, String string2) {
