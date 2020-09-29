@@ -95,12 +95,32 @@ public class httpcServer {
                             urlString = commandLineStringArray[3].replaceAll("'", "");
 
                             return getHeaderValueByKey(urlString, null) + "\nServer: " + getHeaderValueByKey(urlString, "Server") + "\nDate: " + getHeaderValueByKey(urlString, "Date") + "\nContent-Type: " + getHeaderValueByKey(urlString, "Content-Type") + "\nContent-Length: " + getHeaderValueByKey(urlString, "Content-Length") + "\nConnection: " + getHeaderValueByKey(urlString, "Connection") + "\nAccess-Control-Allow-Origin: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Origin") + "\nAccess-Control-Allow-Credentials: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Credentials");
+                        }
+                        // httpc get -h url
+                        else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
+                            String[] keyValueString = commandLineStringArray[3].split(":");
+
+                            // Remove empty bytes from the string
+                            commandLineStringArray[4] = commandLineStringArray[4].replaceAll("\u0000.*", "");
+
+                            System.out.println("Merde " + commandLineStringArray[4] + " % " + commandLineStringArray[4].charAt(0) + " * " + commandLineStringArray[4].charAt(commandLineStringArray[4].length() - 1));
+                            // Check the url format
+                            if (commandLineStringArray[4].charAt(0) == 39 & commandLineStringArray[4].charAt(commandLineStringArray[4].length() - 1) == 39) {
+                                // Remove the apostrophes around the url
+                                urlString = commandLineStringArray[4].replaceAll("'", "");
+                                System.out.println("Merde? " + urlString);
+                                return keyValueString[0] + ": " + getHeaderValueByKey(urlString, keyValueString[0]);
+                            } else {
+                                return "Invalid syntax";
+                            }
                         } else {
                             // Ensure it is not an empty url
                             if (!compareStringsWithChar("", commandLineStringArray[2])) {
-                                // Remove the apostrophes around the url
-                                urlString = commandLineStringArray[2].replaceAll("'", "");
-
+                                // Check the url format
+                                if (commandLineStringArray[2].charAt(0) == 39 & commandLineStringArray[2].charAt(commandLineStringArray[2].length() - 1) == 39) {
+                                    // Remove the apostrophes around the url
+                                    urlString = commandLineStringArray[2].replaceAll("'", "");
+                                }
                             }
                         }
 
