@@ -159,6 +159,26 @@ public class httpcServer {
                                 }
                             }
                         }
+                    }else if (compareStringsWithChar("post", commandLineStringArray[1])){
+                        if (compareStringsWithChar("-v", commandLineStringArray[2])) {
+                            // httpc post -v url
+
+                            // Remove the apostrophes around the url
+                            urlString = commandLineStringArray[3].replaceAll("'", "");
+
+                            return getHeaderValueByKey(urlString, null) + "\nServer: " + getHeaderValueByKey(urlString, "Server") + "\nDate: " + getHeaderValueByKey(urlString, "Date") + "\nContent-Type: " + getHeaderValueByKey(urlString, "Content-Type") + "\nContent-Length: " + getHeaderValueByKey(urlString, "Content-Length") + "\nConnection: " + getHeaderValueByKey(urlString, "Connection") + "\nAccess-Control-Allow-Origin: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Origin") + "\nAccess-Control-Allow-Credentials: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Credentials") + "\n" + getHttpResponse(urlString);
+                        }
+                        else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
+                            // httpc post -h key:value url
+                            //to write...
+                        }else if(compareStringsWithChar("-d", commandLineStringArray[3])){
+                            //to write...
+                        }
+                        else {
+                            // httpc post url
+
+                          return "Please provide Data to be posted !!!";
+                        }
                     } else if (compareStringsWithChar("-v", commandLineStringArray[1])) {
                         // httpc -v url -o file.txt
 
@@ -285,6 +305,12 @@ public class httpcServer {
                 ForkJoinPool.commonPool().submit(() -> readEchoAndRepeat(client));
             }
         }
+    }
+
+    private String postHttpResponse(String urlString) {
+
+        //to write functionality
+         return urlString;
     }
 
     public static void main(String[] args) throws IOException {
