@@ -5,10 +5,7 @@ import joptsimple.OptionSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
@@ -161,12 +158,7 @@ public class httpcServer {
                         }
                     }else if (compareStringsWithChar("post", commandLineStringArray[1])){
                         if (compareStringsWithChar("-v", commandLineStringArray[2])) {
-                            // httpc post -v url
-
-                            // Remove the apostrophes around the url
-                            urlString = commandLineStringArray[3].replaceAll("'", "");
-
-                            return getHeaderValueByKey(urlString, null) + "\nServer: " + getHeaderValueByKey(urlString, "Server") + "\nDate: " + getHeaderValueByKey(urlString, "Date") + "\nContent-Type: " + getHeaderValueByKey(urlString, "Content-Type") + "\nContent-Length: " + getHeaderValueByKey(urlString, "Content-Length") + "\nConnection: " + getHeaderValueByKey(urlString, "Connection") + "\nAccess-Control-Allow-Origin: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Origin") + "\nAccess-Control-Allow-Credentials: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Credentials") + "\n" + getHttpResponse(urlString);
+                            // httpc post -v Content-Type:application urlParameters url
                         }
                         else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
                             // httpc post -h key:value url
@@ -308,7 +300,34 @@ public class httpcServer {
     }
 
     private String postHttpResponse(String urlString) {
+        StringBuilder stringBuilder;
+        String urlParameters = null;    // I need to get the parameters here ???
+        byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
+        try {
+            stringBuilder = new StringBuilder();
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoOutput(true);
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("User-Agent","Java client");
 
+            try ( var wr= new DataOutputStream(connection.getOutputStream())){
+             //   wr.write(postData);   //this shows error ??
+            }
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String line;
+
+            while ((line = bufferedReader.readLine()) != null) {
+                stringBuilder.append(line);
+                stringBuilder.append(System.lineSeparator());
+            }
+            System.out.println(stringBuilder.toString()); //Displays output
+            bufferedReader.close();
+        } catch (Exception e) {
+            return "Post Http response error";
+        }
+
+        return stringBuilder.toString();
         //to write functionality
          return urlString;
     }
