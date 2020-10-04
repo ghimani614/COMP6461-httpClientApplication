@@ -230,6 +230,7 @@ public class httpcServer {
                                                     }
                                                 }
 
+                                                /*
                                                 // Remove the curly brackets around the inline data
                                                 inlineDataString = inlineDataString.substring(1);
 
@@ -259,6 +260,7 @@ public class httpcServer {
                                                     System.out.println("value: " + valueString);
                                                     keyValueHashMap.put(keyString, valueString);
                                                 }
+                                                */
 
                                                 if (!verifyURL(commandLineStringArray[6]))
                                                     return "Invalid syntax";
@@ -266,14 +268,14 @@ public class httpcServer {
                                                 urlString = currentURL;
 
                                                 // Provided data
-                                                // inline data: keyValueHashMap
+                                                // inline data: inlineDataString
                                                 // url: urlString
 
                                                 // Each key value pair can be accessed by looping through the HashMap
 //                                                for (String item : keyValueHashMap.keySet())
 //                                                    System.out.println("key: " + item + " value: " + keyValueHashMap.get(item));
 
-                                                return urlString + " 3";
+                                                return inlineDataString + " " + urlString + " 3";
 //                                                return someMethods(someStrings);
                                             } else {
                                                 return "Invalid syntax";
