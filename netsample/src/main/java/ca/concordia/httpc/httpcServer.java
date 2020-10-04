@@ -170,7 +170,7 @@ public class httpcServer {
 
                             // Provided data
                             // url: urlString
-                            return urlString + "1";
+                            return urlString + " 1";
 //                            return someMethods(someStrings);
                         } else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
                             // Check the number of terms to decide the corresponding command
@@ -186,7 +186,7 @@ public class httpcServer {
 
                                 // Provided data
                                 // url: urlString
-                                return urlString + "2";
+                                return urlString + " 2";
 //                                return someMethods(someStrings);
                             } else if (commandLineStringArray.length == 7) {
                                 // Compare the fourth term
@@ -273,7 +273,7 @@ public class httpcServer {
 //                                                for (String item : keyValueHashMap.keySet())
 //                                                    System.out.println("key: " + item + " value: " + keyValueHashMap.get(item));
 
-                                                return urlString + "3";
+                                                return urlString + " 3";
 //                                                return someMethods(someStrings);
                                             } else {
                                                 return "Invalid syntax";
