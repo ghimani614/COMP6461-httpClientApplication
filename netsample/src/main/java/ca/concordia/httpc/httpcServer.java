@@ -19,6 +19,8 @@ public class httpcServer {
 
     private static final Logger logger = LoggerFactory.getLogger(ca.concordia.echo.BlockingEchoServer.class);
 
+    private String currentURL = "";
+
     private void readEchoAndRepeat(SocketChannel socket) {
         try (SocketChannel client = socket) {
             ByteBuffer buf = ByteBuffer.allocate(1024);
@@ -99,16 +101,10 @@ public class httpcServer {
                             if (commandLineStringArray.length < 5)
                                 return "Invalid syntax";
 
-                            // Remove empty bytes from the string
-                            commandLineStringArray[commandLineStringArray.length - 1] = commandLineStringArray[commandLineStringArray.length - 1].replaceAll("\u0000.*", "");
-
-                            // Check the url format, it should wrapped by a pair of apostrophes
-                            if (commandLineStringArray[commandLineStringArray.length - 1].charAt(0) == 39 & commandLineStringArray[commandLineStringArray.length - 1].charAt(commandLineStringArray[commandLineStringArray.length - 1].length() - 1) == 39) {
-                                // Remove the apostrophes around the url
-                                urlString = commandLineStringArray[commandLineStringArray.length - 1].replaceAll("'", "");
-                            } else {
+                            if (!verifyURL(commandLineStringArray[commandLineStringArray.length - 1]))
                                 return "Invalid syntax";
-                            }
+
+                            urlString = currentURL;
 
                             String returnString = "";
 
@@ -140,36 +136,39 @@ public class httpcServer {
                         } else {
                             // httpc get url
 
-                            // Ensure it is not an empty url
-                            if (!compareStringsWithChar("", commandLineStringArray[2])) {
-                                // Remove empty bytes from the string
-                                commandLineStringArray[2] = commandLineStringArray[2].replaceAll("\u0000.*", "");
+                            if (!verifyURL(commandLineStringArray[2]))
+                                return "Invalid syntax";
 
-                                // Check the url format, it should wrapped by a pair of apostrophes
-                                if (commandLineStringArray[2].charAt(0) == 39 & commandLineStringArray[2].charAt(commandLineStringArray[2].length() - 1) == 39) {
-                                    // Remove the apostrophes around the url
-                                    urlString = commandLineStringArray[2].replaceAll("'", "");
+                            urlString = currentURL;
 
-                                    return getHttpResponse(urlString);
-                                } else {
-                                    return "Invalid syntax";
-                                }
-                            }
+                            return getHttpResponse(urlString);
                         }
-                    }else if (compareStringsWithChar("post", commandLineStringArray[1])){
+                    } else if (compareStringsWithChar("post", commandLineStringArray[1])) {
                         if (compareStringsWithChar("-v", commandLineStringArray[2])) {
-                            // httpc post -v Content-Type:application urlParameters url
-                        }
-                        else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
+                            // httpc post -v -h Content-Type:application/json url
+
+                            // Check if it contains the exact number of terms
+                            if (commandLineStringArray.length != 6)
+                                return "Invalid syntax";
+
+                            // The term -h is mandatory for every post command
+                            if (compareStringsWithChar("-h", commandLineStringArray[3]))
+                                return "Invalid syntax";
+
+                            if (compareStringsWithChar("Content-Type:application/json", commandLineStringArray[3]))
+                                return "Content-Type has to be application/json";
+
+
+                        } else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
                             // httpc post -h key:value url
                             //to write...
-                        }else if(compareStringsWithChar("-d", commandLineStringArray[3])){
+
+                        } else if (compareStringsWithChar("-d", commandLineStringArray[3])) {
                             //to write...
-                        }
-                        else {
+                        } else {
                             // httpc post url
 
-                          return "Please provide Data to be posted !!!";
+                            return "Please provide Data to be posted !!!";
                         }
                     } else if (compareStringsWithChar("-v", commandLineStringArray[1])) {
                         // httpc -v url -o file.txt
@@ -178,16 +177,10 @@ public class httpcServer {
                         if (commandLineStringArray.length != 5)
                             return "Invalid syntax";
 
-                        // Remove empty bytes from the string
-                        commandLineStringArray[2] = commandLineStringArray[2].replaceAll("\u0000.*", "");
-
-                        // Check the url format, it should wrapped by a pair of apostrophes
-                        if (commandLineStringArray[2].charAt(0) == 39 & commandLineStringArray[2].charAt(commandLineStringArray[2].length() - 1) == 39) {
-                            // Remove the apostrophes around the url
-                            urlString = commandLineStringArray[2].replaceAll("'", "");
-                        } else {
+                        if (!verifyURL(commandLineStringArray[2]))
                             return "Invalid syntax";
-                        }
+
+                        urlString = currentURL;
 
                         // The fourth term should be -o without any exception
                         if (!compareStringsWithChar("-o", commandLineStringArray[3]))
@@ -211,6 +204,24 @@ public class httpcServer {
         } else {
             return "Invalid syntax";
         }
+    }
+
+    private boolean verifyURL(String urlString) {
+        // Remove empty bytes from the string
+        urlString = urlString.replaceAll("\u0000.*", "");
+
+        // Check it is an empty url
+        if (!compareStringsWithChar("", urlString)) {
+            // Check the url format, it should wrapped by a pair of apostrophes
+            if (urlString.charAt(0) == 39 & urlString.charAt(urlString.length() - 1) == 39) {
+                // Remove the apostrophes around the url
+                currentURL = urlString.replaceAll("'", "");
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private String getHttpResponse(String urlString) {
@@ -300,36 +311,36 @@ public class httpcServer {
     }
 
     private String postHttpResponse(String urlString) {
-        StringBuilder stringBuilder;
-        String urlParameters = null;    // I need to get the parameters here ???
-        byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
-        try {
-            stringBuilder = new StringBuilder();
-            URL url = new URL(urlString);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setDoOutput(true);
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("User-Agent","Java client");
-
-            try ( var wr= new DataOutputStream(connection.getOutputStream())){
-             //   wr.write(postData);   //this shows error ??
-            }
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            String line;
-
-            while ((line = bufferedReader.readLine()) != null) {
-                stringBuilder.append(line);
-                stringBuilder.append(System.lineSeparator());
-            }
-            System.out.println(stringBuilder.toString()); //Displays output
-            bufferedReader.close();
-        } catch (Exception e) {
-            return "Post Http response error";
-        }
-
-        return stringBuilder.toString();
+//        StringBuilder stringBuilder;
+//        String urlParameters = null;    // I need to get the parameters here ???
+//        byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
+//        try {
+//            stringBuilder = new StringBuilder();
+//            URL url = new URL(urlString);
+//            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+//            connection.setDoOutput(true);
+//            connection.setRequestMethod("POST");
+//            connection.setRequestProperty("User-Agent", "Java client");
+//
+//            try (var wr = new DataOutputStream(connection.getOutputStream())) {
+//                //   wr.write(postData);   //this shows error ??
+//            }
+//            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+//            String line;
+//
+//            while ((line = bufferedReader.readLine()) != null) {
+//                stringBuilder.append(line);
+//                stringBuilder.append(System.lineSeparator());
+//            }
+//            System.out.println(stringBuilder.toString()); //Displays output
+//            bufferedReader.close();
+//        } catch (Exception e) {
+//            return "Post Http response error";
+//        }
+//
+//        return stringBuilder.toString();
         //to write functionality
-         return urlString;
+        return urlString;
     }
 
     public static void main(String[] args) throws IOException {
