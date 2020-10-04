@@ -1,5 +1,6 @@
 package ca.concordia.httpc;
 
+import com.sun.xml.internal.ws.policy.EffectiveAlternativeSelector;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.slf4j.Logger;
@@ -14,6 +15,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ForkJoinPool;
 
 import static java.util.Arrays.asList;
+
+import java.util.HashMap;
 
 public class httpcServer {
 
@@ -60,6 +63,8 @@ public class httpcServer {
     }
 
     private String parseCommandLine(String commandLineString) {
+        commandLineString = preprocessCommandLine(commandLineString);
+
         String[] commandLineStringArray = commandLineString.split(" ");
 
 //        for (int i = 0; i < commandLineStringArray.length; i++)
@@ -152,19 +157,157 @@ public class httpcServer {
                                 return "Invalid syntax";
 
                             // The term -h is mandatory for every post command
-                            if (compareStringsWithChar("-h", commandLineStringArray[3]))
+                            if (!compareStringsWithChar("-h", commandLineStringArray[3]))
                                 return "Invalid syntax";
 
-                            if (compareStringsWithChar("Content-Type:application/json", commandLineStringArray[3]))
+                            if (!compareStringsWithChar("Content-Type:application/json", commandLineStringArray[4]))
                                 return "Content-Type has to be application/json";
 
+                            if (!verifyURL(commandLineStringArray[5]))
+                                return "Invalid syntax";
 
+                            urlString = currentURL;
+
+                            // Provided data
+                            // url: urlString
+                            return urlString + "1";
+//                            return someMethods(someStrings);
                         } else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
-                            // httpc post -h key:value url
-                            //to write...
+                            // Check the number of terms to decide the corresponding command
+                            if (commandLineStringArray.length == 5) {
+                                // httpc post -h Content-Type:application/json url
+                                if (!compareStringsWithChar("Content-Type:application/json", commandLineStringArray[3]))
+                                    return "Content-Type has to be application/json";
 
+                                if (!verifyURL(commandLineStringArray[4]))
+                                    return "Invalid syntax";
+
+                                urlString = currentURL;
+
+                                // Provided data
+                                // url: urlString
+                                return urlString + "2";
+//                                return someMethods(someStrings);
+                            } else if (commandLineStringArray.length == 7) {
+                                // Compare the fourth term
+                                if (compareStringsWithChar("-d", commandLineStringArray[4])) {
+                                    // httpc post -h key:value -d "inline data" url
+                                    if (!compareStringsWithChar("Content-Type:application/json", commandLineStringArray[3]))
+                                        return "Content-Type has to be application/json";
+
+                                    // Verify the format of inline data
+
+                                    // Remove empty bytes from the string
+                                    String inlineDataString = commandLineStringArray[5].replaceAll("\u0000.*", "");
+
+                                    // Check if it is empty
+                                    if (!compareStringsWithChar("", inlineDataString)) {
+                                        // Check the inline data format, it should wrapped by a pair of apostrophes
+                                        if (inlineDataString.charAt(0) == 39 & inlineDataString.charAt(inlineDataString.length() - 1) == 39) {
+                                            // Remove the apostrophes around the url
+                                            inlineDataString = inlineDataString.replaceAll("'", "");
+
+                                            // Inside the the pair of apostrophes, it should be wrapped by a pair of curly brackets
+                                            if (inlineDataString.charAt(0) == 123 & inlineDataString.charAt(inlineDataString.length() - 1) == 125) {
+
+                                                boolean hasOneLeftCurlyBracket = false;
+                                                boolean hasOneRightCurlyBracket = false;
+
+                                                // Check if there is only one left and right curly bracket, otherwise it is invalid syntax
+                                                for (int characterIndex = 0; characterIndex < inlineDataString.length() - 1; characterIndex++) {
+                                                    if (inlineDataString.charAt(characterIndex) == 123) {
+                                                        if (!hasOneLeftCurlyBracket)
+                                                            hasOneLeftCurlyBracket = true;
+                                                        else
+                                                            return "Invalid syntax";
+                                                    }
+
+                                                    if (inlineDataString.charAt(characterIndex) == 125) {
+                                                        if (!hasOneRightCurlyBracket)
+                                                            hasOneRightCurlyBracket = true;
+                                                        else
+                                                            return "Invalid syntax";
+                                                    }
+                                                }
+
+                                                // Remove the curly brackets around the inline data
+                                                inlineDataString = inlineDataString.substring(1);
+
+                                                inlineDataString = inlineDataString.replaceAll("}", "");
+
+                                                // The JSON data may contain multiple key value pairs
+                                                inlineDataString = inlineDataString.replaceAll(",", " ");
+
+                                                // Partition each key value pair
+                                                String[] inlineDataStringArray = inlineDataString.split(" ");
+
+                                                // Use HashMap to store each key value pair
+                                                HashMap<String, String> keyValueHashMap = new HashMap<String, String>();
+
+                                                for (int index = 0; index < inlineDataStringArray.length; index++) {
+                                                    // Separate the based on the colon
+                                                    String keyValueStringArray[] = inlineDataStringArray[index].split(":");
+
+                                                    String keyString = keyValueStringArray[0];
+                                                    String valueString = keyValueStringArray[1];
+
+                                                    // Remove extra apostrophes around the key if it has
+                                                    if (keyString.charAt(0) == '"' & keyString.charAt(keyString.length() - 1) == '"')
+                                                        keyString = keyString.substring(1, keyString.length() - 1);
+
+                                                    System.out.println("key: " + keyString);
+                                                    System.out.println("value: " + valueString);
+                                                    keyValueHashMap.put(keyString, valueString);
+                                                }
+
+                                                if (!verifyURL(commandLineStringArray[6]))
+                                                    return "Invalid syntax";
+
+                                                urlString = currentURL;
+
+                                                // Provided data
+                                                // inline data: keyValueHashMap
+                                                // url: urlString
+
+                                                // Each key value pair can be accessed by looping through the HashMap
+//                                                for (String item : keyValueHashMap.keySet())
+//                                                    System.out.println("key: " + item + " value: " + keyValueHashMap.get(item));
+
+                                                return urlString + "3";
+//                                                return someMethods(someStrings);
+                                            } else {
+                                                return "Invalid syntax";
+                                            }
+                                        } else {
+                                            return "Invalid syntax";
+                                        }
+                                    } else {
+                                        return "Invalid syntax";
+                                    }
+                                } else if (compareStringsWithChar("-f", commandLineStringArray[4])) {
+                                    // httpc post -h key:value -f "file name" url
+                                    if (compareStringsWithChar("Content-Type:application/json", commandLineStringArray[3]))
+                                        return "Content-Type has to be application/json";
+
+                                    // Provided data
+
+
+//                                    return someMethods(someStrings);
+                                } else {
+                                    return "Invalid syntax";
+                                }
+                            } else {
+                                return "Invalid syntax";
+                            }
                         } else if (compareStringsWithChar("-d", commandLineStringArray[3])) {
-                            //to write...
+                            // httpc post -h Content-Type:application/json -d "inline data" url
+
+                            // Check if it contains the exact number of terms
+                            if (commandLineStringArray.length != 7)
+                                return "Invalid syntax";
+
+
+//                            return someMethods(someStrings);
                         } else {
                             // httpc post url
 
@@ -204,6 +347,27 @@ public class httpcServer {
         } else {
             return "Invalid syntax";
         }
+    }
+
+    private String preprocessCommandLine(String commandLineString) {
+        boolean repeat = true;
+
+        while (repeat) {
+            repeat = false;
+
+            for (int characterIndex = 0; characterIndex < commandLineString.length() - 1; characterIndex++) {
+                if (commandLineString.charAt(characterIndex) == ':' | commandLineString.charAt(characterIndex) == ',') {
+                    if (commandLineString.charAt(characterIndex + 1) == ' ') {
+                        commandLineString = commandLineString.substring(0, characterIndex + 1) + commandLineString.substring(characterIndex + 2, commandLineString.length());
+                        repeat = true;
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        return commandLineString;
     }
 
     private boolean verifyURL(String urlString) {
