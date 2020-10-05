@@ -24,6 +24,7 @@ public class httpcServer {
     private static final Logger logger = LoggerFactory.getLogger(ca.concordia.echo.BlockingEchoServer.class);
 
     private String currentURL = "";
+    private String redirectedURL = "", redirectionResultString = "";
 
     private void readEchoAndRepeat(SocketChannel socket) {
         try (SocketChannel client = socket) {
@@ -112,6 +113,16 @@ public class httpcServer {
 
                             urlString = currentURL;
 
+                            // Test the URL to redirect or not
+                            int redirectionResultCode = detectRedirection(urlString);
+
+                            if (redirectionResultCode == -1)
+                                return "Redirection errors.";
+                            else if (redirectionResultCode == 0)
+                                redirectionResultString = "No redirection detected\n";
+                            else if (redirectionResultCode == 1)
+                                urlString = redirectedURL;
+
                             String returnString = "";
 
                             // There could be multiple header parameters for httpc get -h
@@ -147,7 +158,17 @@ public class httpcServer {
 
                             urlString = currentURL;
 
-                            return getHttpResponse(urlString);
+                            // Test the URL to redirect or not
+                            int redirectionResultCode = detectRedirection(urlString);
+
+                            if (redirectionResultCode == -1)
+                                return "Redirection errors.";
+                            else if (redirectionResultCode == 0)
+                                redirectionResultString = "No redirection detected\n";
+                            else if (redirectionResultCode == 1)
+                                urlString = redirectedURL;
+
+                            return redirectionResultString + getHttpResponse(urlString);
                         }
                     } else if (compareStringsWithChar("post", commandLineStringArray[1])) {
                         if (compareStringsWithChar("-v", commandLineStringArray[2])) {
@@ -169,9 +190,20 @@ public class httpcServer {
 
                             urlString = currentURL;
 
+                            // Test the URL to redirect or not
+                            int redirectionResultCode = detectRedirection(urlString);
+
+                            if (redirectionResultCode == -1)
+                                return "Redirection errors.";
+                            else if (redirectionResultCode == 0)
+                                redirectionResultString = "No redirection detected\n";
+                            else if (redirectionResultCode == 1)
+                                urlString = redirectedURL;
+
                             // Provided data
                             // url: urlString
-                            return urlString + " 1";
+
+                            return redirectionResultString + urlString + " 1";
 //                            return someMethods(someStrings);
                         } else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
                             // Check the number of terms to decide the corresponding command
@@ -185,9 +217,20 @@ public class httpcServer {
 
                                 urlString = currentURL;
 
+                                // Test the URL to redirect or not
+                                int redirectionResultCode = detectRedirection(urlString);
+
+                                if (redirectionResultCode == -1)
+                                    return "Redirection errors.";
+                                else if (redirectionResultCode == 0)
+                                    redirectionResultString = "No redirection detected\n";
+                                else if (redirectionResultCode == 1)
+                                    urlString = redirectedURL;
+
                                 // Provided data
                                 // url: urlString
-                                return urlString + " 2";
+
+                                return redirectionResultString + urlString + " 2";
 //                                return someMethods(someStrings);
                             } else if (commandLineStringArray.length == 7) {
                                 // Compare the fourth term
@@ -203,7 +246,7 @@ public class httpcServer {
 
                                     // Check if it is empty
                                     if (!compareStringsWithChar("", inlineDataString)) {
-                                        // Check the inline data format, it should wrapped by a pair of apostrophes
+                                        // Check the inline data format, it should be wrapped by a pair of apostrophes
                                         if (inlineDataString.charAt(0) == 39 & inlineDataString.charAt(inlineDataString.length() - 1) == 39) {
                                             // Remove the apostrophes around the url
                                             inlineDataString = inlineDataString.replaceAll("'", "");
@@ -236,11 +279,21 @@ public class httpcServer {
 
                                                 urlString = currentURL;
 
+                                                // Test the URL to redirect or not
+                                                int redirectionResultCode = detectRedirection(urlString);
+
+                                                if (redirectionResultCode == -1)
+                                                    return "Redirection errors.";
+                                                else if (redirectionResultCode == 0)
+                                                    redirectionResultString = "No redirection detected\n";
+                                                else if (redirectionResultCode == 1)
+                                                    urlString = redirectedURL;
+
                                                 // Provided data
                                                 // inline data: inlineDataString
                                                 // url: urlString
 
-                                                return inlineDataString + " " + urlString + " 3";
+                                                return redirectionResultString + inlineDataString + " " + urlString + " 3";
 //                                                return someMethods(someStrings);
                                             } else {
                                                 return "Invalid syntax";
@@ -266,11 +319,21 @@ public class httpcServer {
 
                                     urlString = currentURL;
 
+                                    // Test the URL to redirect or not
+                                    int redirectionResultCode = detectRedirection(urlString);
+
+                                    if (redirectionResultCode == -1)
+                                        return "Redirection errors.";
+                                    else if (redirectionResultCode == 0)
+                                        redirectionResultString = "No redirection detected\n";
+                                    else if (redirectionResultCode == 1)
+                                        urlString = redirectedURL;
+
                                     // Provided data
                                     // JSON file data: jsonFileContentString
                                     // url: urlString
 
-                                    return jsonFileContentString + " " + urlString + " 4";
+                                    return redirectionResultString + jsonFileContentString + " " + urlString + " 4";
 //                                    return someMethods(someStrings);
                                 } else {
                                     return "Invalid syntax";
@@ -304,6 +367,16 @@ public class httpcServer {
 
                         urlString = currentURL;
 
+                        // Test the URL to redirect or not
+                        int redirectionResultCode = detectRedirection(urlString);
+
+                        if (redirectionResultCode == -1)
+                            return "Redirection errors.";
+                        else if (redirectionResultCode == 0)
+                            redirectionResultString = "No redirection detected\n";
+                        else if (redirectionResultCode == 1)
+                            urlString = redirectedURL;
+
                         // The fourth term should be -o without any exception
                         if (!compareStringsWithChar("-o", commandLineStringArray[3]))
                             return "Invalid syntax";
@@ -315,9 +388,9 @@ public class httpcServer {
                         boolean result = writeToTextFile(fileName, getHttpResponse(urlString));
 
                         if (result)
-                            return "Successfully wrote response to the file.";
+                            return redirectionResultString + "Successfully wrote response to the file.";
                         else
-                            return "Failed to write the file.";
+                            return redirectionResultString + "Failed to write the file.";
                     }
                 }
             }
@@ -349,13 +422,79 @@ public class httpcServer {
         return commandLineString;
     }
 
+    private int detectRedirection(String urlString) {
+        // Result code
+        // -1: Redirection failed
+        // 0: No redirection detected
+        // 1: Redirection succeeded
+
+        // Initialize attributes
+        boolean continueRedirection = true;
+        boolean redirectionDetected = false;
+        int maximumRedirectionTimes = 5;
+        int currentRedirectionTimes = 0;
+
+        redirectionResultString = "";
+
+        redirectedURL = urlString;
+
+        // Redirection loop
+        while (continueRedirection & currentRedirectionTimes < maximumRedirectionTimes) {
+            continueRedirection = false;
+
+            try {
+                HttpURLConnection connection = (HttpURLConnection) new URL(redirectedURL).openConnection();
+                connection.setReadTimeout(5000);
+
+                boolean redirected = false;
+
+                int status = connection.getResponseCode();
+
+                // Response code starts with 3 is redirection
+                if (status != HttpURLConnection.HTTP_OK) {
+                    if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER) {
+                        redirected = true;
+                        redirectionDetected = true;
+                        continueRedirection = true;
+
+                        redirectionResultString += "Response code: " + status + "\n";
+
+                        currentRedirectionTimes += 1;
+                    }
+                }
+
+                if (redirected) {
+                    // Get redirected url from "location" header field
+                    redirectedURL = connection.getHeaderField("Location");
+
+                    // Open the new connection again
+                    connection = (HttpURLConnection) new URL(redirectedURL).openConnection();
+
+                    redirectionResultString += "Redirect to URL: " + redirectedURL + "\n";
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+
+                return -1;
+            }
+        }
+
+        if (redirectionDetected)
+            redirectionResultString += "Total redirection times: " + currentRedirectionTimes + "\n";
+
+        if (!redirectionDetected)
+            return 0;
+        else
+            return 1;
+    }
+
     private boolean verifyURL(String urlString) {
         // Remove empty bytes from the string
         urlString = urlString.replaceAll("\u0000.*", "");
 
         // Check it is an empty url
         if (!compareStringsWithChar("", urlString)) {
-            // Check the url format, it should wrapped by a pair of apostrophes
+            // Check the url format, it should be wrapped by a pair of apostrophes
             if (urlString.charAt(0) == 39 & urlString.charAt(urlString.length() - 1) == 39) {
                 // Remove the apostrophes around the url
                 currentURL = urlString.replaceAll("'", "");
