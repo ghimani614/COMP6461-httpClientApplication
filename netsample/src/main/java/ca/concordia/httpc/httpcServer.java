@@ -16,7 +16,8 @@ import java.util.concurrent.ForkJoinPool;
 
 import static java.util.Arrays.asList;
 
-import java.util.HashMap;
+import org.json.simple.*;
+import org.json.simple.parser.*;
 
 public class httpcServer {
 
@@ -230,38 +231,6 @@ public class httpcServer {
                                                     }
                                                 }
 
-                                                /*
-                                                // Remove the curly brackets around the inline data
-                                                inlineDataString = inlineDataString.substring(1);
-
-                                                inlineDataString = inlineDataString.replaceAll("}", "");
-
-                                                // The JSON data may contain multiple key value pairs
-                                                inlineDataString = inlineDataString.replaceAll(",", " ");
-
-                                                // Partition each key value pair
-                                                String[] inlineDataStringArray = inlineDataString.split(" ");
-
-                                                // Use HashMap to store each key value pair
-                                                HashMap<String, String> keyValueHashMap = new HashMap<String, String>();
-
-                                                for (int index = 0; index < inlineDataStringArray.length; index++) {
-                                                    // Separate the based on the colon
-                                                    String keyValueStringArray[] = inlineDataStringArray[index].split(":");
-
-                                                    String keyString = keyValueStringArray[0];
-                                                    String valueString = keyValueStringArray[1];
-
-                                                    // Remove extra apostrophes around the key if it has
-                                                    if (keyString.charAt(0) == '"' & keyString.charAt(keyString.length() - 1) == '"')
-                                                        keyString = keyString.substring(1, keyString.length() - 1);
-
-                                                    System.out.println("key: " + keyString);
-                                                    System.out.println("value: " + valueString);
-                                                    keyValueHashMap.put(keyString, valueString);
-                                                }
-                                                */
-
                                                 if (!verifyURL(commandLineStringArray[6]))
                                                     return "Invalid syntax";
 
@@ -270,10 +239,6 @@ public class httpcServer {
                                                 // Provided data
                                                 // inline data: inlineDataString
                                                 // url: urlString
-
-                                                // Each key value pair can be accessed by looping through the HashMap
-//                                                for (String item : keyValueHashMap.keySet())
-//                                                    System.out.println("key: " + item + " value: " + keyValueHashMap.get(item));
 
                                                 return inlineDataString + " " + urlString + " 3";
 //                                                return someMethods(someStrings);
@@ -288,12 +253,24 @@ public class httpcServer {
                                     }
                                 } else if (compareStringsWithChar("-f", commandLineStringArray[4])) {
                                     // httpc post -h key:value -f "file name" url
-                                    if (compareStringsWithChar("Content-Type:application/json", commandLineStringArray[3]))
+                                    if (!compareStringsWithChar("Content-Type:application/json", commandLineStringArray[3]))
                                         return "Content-Type has to be application/json";
 
+                                    String jsonFileContentString = readJSONFile(commandLineStringArray[5]);
+
+                                    if (jsonFileContentString == "Failed")
+                                        return "Failed to read JSON file.";
+
+                                    if (!verifyURL(commandLineStringArray[6]))
+                                        return "Invalid syntax";
+
+                                    urlString = currentURL;
+
                                     // Provided data
+                                    // JSON file data: jsonFileContentString
+                                    // url: urlString
 
-
+                                    return jsonFileContentString + " " + urlString + " 4";
 //                                    return someMethods(someStrings);
                                 } else {
                                     return "Invalid syntax";
@@ -429,6 +406,22 @@ public class httpcServer {
         }
 
         return "Not found";
+    }
+
+    private String readJSONFile(String jsonFileName) {
+        JSONParser parser = new JSONParser();
+
+        JSONObject jsonObject = null;
+
+        try {
+            Object obj = parser.parse(new FileReader(jsonFileName));
+            jsonObject = (JSONObject) obj;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Failed";
+        }
+
+        return jsonObject.toString();
     }
 
     private boolean writeToTextFile(String fileNameString, String contentString) {
