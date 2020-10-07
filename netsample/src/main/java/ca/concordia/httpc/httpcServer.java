@@ -307,6 +307,7 @@ public class httpcServer {
 
                                     // Provided data
                                     // verbose output: hasVerbosityString
+                                    // header parameter list: headerKeyValuePairHashMap
                                     // JSON file data: jsonFileContentString
                                     // url: urlString
 
@@ -491,6 +492,7 @@ public class httpcServer {
 
                                 // Provided data
                                 // verbose output: hasVerbosityString
+                                // header parameter list: headerKeyValuePairHashMap
                                 // JSON file data: jsonFileContentString
                                 // url: urlString
 
