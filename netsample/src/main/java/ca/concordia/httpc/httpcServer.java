@@ -16,6 +16,8 @@ import java.util.concurrent.ForkJoinPool;
 
 import static java.util.Arrays.asList;
 
+import java.util.HashMap;
+
 import org.json.simple.*;
 import org.json.simple.parser.*;
 
@@ -25,6 +27,11 @@ public class httpcServer {
 
     private String currentURL = "";
     private String redirectedURL = "", redirectionResultString = "";
+
+    private boolean hasVerbosityString = false;
+    private String verbosityString = "";
+
+    private HashMap<String, String> headerKeyValuePairHashMap;
 
     private void readEchoAndRepeat(SocketChannel socket) {
         try (SocketChannel client = socket) {
@@ -67,12 +74,9 @@ public class httpcServer {
     private String parseCommandLine(String commandLineString) {
         commandLineString = preprocessCommandLine(commandLineString);
 
+        hasVerbosityString = false;
+
         String[] commandLineStringArray = commandLineString.split(" ");
-
-//        for (int i = 0; i < commandLineStringArray.length; i++)
-//            System.out.println(i + ": " + commandLineStringArray[i]);
-
-//		System.out.println(commandLineStringArray.length);
 
         if (commandLineStringArray.length > 0) {
             // Check the starting word, must start with httpc
@@ -103,11 +107,6 @@ public class httpcServer {
                             return getHeaderValueByKey(urlString, null) + "\nServer: " + getHeaderValueByKey(urlString, "Server") + "\nDate: " + getHeaderValueByKey(urlString, "Date") + "\nContent-Type: " + getHeaderValueByKey(urlString, "Content-Type") + "\nContent-Length: " + getHeaderValueByKey(urlString, "Content-Length") + "\nConnection: " + getHeaderValueByKey(urlString, "Connection") + "\nAccess-Control-Allow-Origin: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Origin") + "\nAccess-Control-Allow-Credentials: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Credentials") + "\n" + getHttpResponse(urlString);
                         } else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
                             // httpc get -h key:value url
-
-                            // Check if it contains the minimum number of terms
-                            if (commandLineStringArray.length < 5)
-                                return "Invalid syntax";
-
                             if (!verifyURL(commandLineStringArray[commandLineStringArray.length - 1]))
                                 return "Invalid syntax";
 
@@ -123,33 +122,26 @@ public class httpcServer {
                             else if (redirectionResultCode == 1)
                                 urlString = redirectedURL;
 
-                            String returnString = "";
+                            verbosityString = "";
 
-                            // There could be multiple header parameters for httpc get -h
-                            for (int index = 3; index < commandLineStringArray.length - 1; index++) {
-                                boolean hasOneColon = false;
+                            // There could be multiple header parameters
+                            if (!extractHeaderParameters(commandLineStringArray, 3, commandLineStringArray.length - 1))
+                                return "Invalid syntax";
 
-                                // Check if there is only one colon, otherwise it is invalid syntax
-                                for (int characterIndex = 0; characterIndex < commandLineStringArray[index].length() - 1; characterIndex++) {
-                                    if (commandLineStringArray[index].charAt(characterIndex) == ':') {
-                                        if (!hasOneColon)
-                                            hasOneColon = true;
-                                        else
-                                            return "Invalid syntax";
-                                    }
-                                }
+                            int index = 0;
 
-                                String[] keyValueString = commandLineStringArray[index].split(":");
-
+                            for (String keyString : headerKeyValuePairHashMap.keySet()) {
                                 // Append each key search to the return string
-                                returnString += keyValueString[0] + ": " + getHeaderValueByKey(urlString, keyValueString[0]);
+                                verbosityString += keyString + ": " + getHeaderValueByKey(urlString, keyString);
 
                                 // Append a new line except for the last line
-                                if (index != commandLineStringArray.length - 2)
-                                    returnString += "\n";
+                                if (index != headerKeyValuePairHashMap.size() - 1)
+                                    verbosityString += "\n";
+
+                                index += 1;
                             }
 
-                            return returnString;
+                            return verbosityString;
                         } else {
                             // httpc get url
 
@@ -168,81 +160,53 @@ public class httpcServer {
                             else if (redirectionResultCode == 1)
                                 urlString = redirectedURL;
 
-                            return redirectionResultString + getHttpResponse(urlString);
+                            return redirectionResultString + "\n" + getHttpResponse(urlString);
                         }
                     } else if (compareStringsWithChar("post", commandLineStringArray[1])) {
                         if (compareStringsWithChar("-v", commandLineStringArray[2])) {
-                            // httpc post -v -h Content-Type:application/json url
+                            if (compareStringsWithChar("-h", commandLineStringArray[3])) {
+                                if (commandLineStringArray.length >= 6 & !compareStringsWithChar("-d", commandLineStringArray[commandLineStringArray.length - 3]) & !compareStringsWithChar("-f", commandLineStringArray[commandLineStringArray.length - 3])) {
+                                    // httpc post -v -h key:value url
 
-                            // Check if it contains the exact number of terms
-                            if (commandLineStringArray.length != 6)
-                                return "Invalid syntax";
+                                    hasVerbosityString = true;
 
-                            // The term -h is mandatory for every post command
-                            if (!compareStringsWithChar("-h", commandLineStringArray[3]))
-                                return "Invalid syntax";
+                                    if (!verifyURL(commandLineStringArray[commandLineStringArray.length - 1]))
+                                        return "Invalid syntax";
 
-                            if (!compareStringsWithChar("Content-Type:application/json", commandLineStringArray[4]))
-                                return "Content-Type has to be application/json";
+                                    urlString = currentURL;
 
-                            if (!verifyURL(commandLineStringArray[5]))
-                                return "Invalid syntax";
+                                    // Test the URL to redirect or not
+                                    int redirectionResultCode = detectRedirection(urlString);
 
-                            urlString = currentURL;
+                                    if (redirectionResultCode == -1)
+                                        return "Redirection errors.";
+                                    else if (redirectionResultCode == 0)
+                                        redirectionResultString = "No redirection detected\n";
+                                    else if (redirectionResultCode == 1)
+                                        urlString = redirectedURL;
 
-                            // Test the URL to redirect or not
-                            int redirectionResultCode = detectRedirection(urlString);
+                                    // There could be multiple header parameters
+                                    if (!extractHeaderParameters(commandLineStringArray, 4, commandLineStringArray.length - 1))
+                                        return "Invalid syntax";
 
-                            if (redirectionResultCode == -1)
-                                return "Redirection errors.";
-                            else if (redirectionResultCode == 0)
-                                redirectionResultString = "No redirection detected\n";
-                            else if (redirectionResultCode == 1)
-                                urlString = redirectedURL;
+                                    // Provided data
+                                    // verbose output: hasVerbosityString
+                                    // header parameter list: headerKeyValuePairHashMap
+                                    // url: urlString
 
-                            // Provided data
-                            // url: urlString
+                                    // For debugging
+                                    for (String keyString : headerKeyValuePairHashMap.keySet())
+                                        System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
 
-                            return redirectionResultString + urlString + " 1";
+                                    return redirectionResultString + "\n" + verbosityString + "\n" + urlString + " 6";
 //                            return someMethods(someStrings);
-                        } else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
-                            // Check the number of terms to decide the corresponding command
-                            if (commandLineStringArray.length == 5) {
-                                // httpc post -h Content-Type:application/json url
-                                if (!compareStringsWithChar("Content-Type:application/json", commandLineStringArray[3]))
-                                    return "Content-Type has to be application/json";
-
-                                if (!verifyURL(commandLineStringArray[4]))
-                                    return "Invalid syntax";
-
-                                urlString = currentURL;
-
-                                // Test the URL to redirect or not
-                                int redirectionResultCode = detectRedirection(urlString);
-
-                                if (redirectionResultCode == -1)
-                                    return "Redirection errors.";
-                                else if (redirectionResultCode == 0)
-                                    redirectionResultString = "No redirection detected\n";
-                                else if (redirectionResultCode == 1)
-                                    urlString = redirectedURL;
-
-                                // Provided data
-                                // url: urlString
-
-                                return redirectionResultString + urlString + " 2";
-//                                return someMethods(someStrings);
-                            } else if (commandLineStringArray.length == 7) {
-                                // Compare the fourth term
-                                if (compareStringsWithChar("-d", commandLineStringArray[4])) {
-                                    // httpc post -h key:value -d "inline data" url
-                                    if (!compareStringsWithChar("Content-Type:application/json", commandLineStringArray[3]))
-                                        return "Content-Type has to be application/json";
+                                } else if (compareStringsWithChar("-d", commandLineStringArray[commandLineStringArray.length - 3])) {
+                                    // httpc post -v -h key:value -d "inline data" url
 
                                     // Verify the format of inline data
 
                                     // Remove empty bytes from the string
-                                    String inlineDataString = commandLineStringArray[5].replaceAll("\u0000.*", "");
+                                    String inlineDataString = commandLineStringArray[commandLineStringArray.length - 2].replaceAll("\u0000.*", "");
 
                                     // Check if it is empty
                                     if (!compareStringsWithChar("", inlineDataString)) {
@@ -274,7 +238,7 @@ public class httpcServer {
                                                     }
                                                 }
 
-                                                if (!verifyURL(commandLineStringArray[6]))
+                                                if (!verifyURL(commandLineStringArray[commandLineStringArray.length - 1]))
                                                     return "Invalid syntax";
 
                                                 urlString = currentURL;
@@ -289,11 +253,21 @@ public class httpcServer {
                                                 else if (redirectionResultCode == 1)
                                                     urlString = redirectedURL;
 
+                                                // There could be multiple header parameters
+                                                if (!extractHeaderParameters(commandLineStringArray, 4, commandLineStringArray.length - 3))
+                                                    return "Invalid syntax";
+
                                                 // Provided data
+                                                // verbose output: hasVerbosityString
+                                                // header parameter list: headerKeyValuePairHashMap
                                                 // inline data: inlineDataString
                                                 // url: urlString
 
-                                                return redirectionResultString + inlineDataString + " " + urlString + " 3";
+                                                // For debugging
+                                                for (String keyString : headerKeyValuePairHashMap.keySet())
+                                                    System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
+
+                                                return redirectionResultString + "\n" + inlineDataString + " " + urlString + " 7";
 //                                                return someMethods(someStrings);
                                             } else {
                                                 return "Invalid syntax";
@@ -304,17 +278,15 @@ public class httpcServer {
                                     } else {
                                         return "Invalid syntax";
                                     }
-                                } else if (compareStringsWithChar("-f", commandLineStringArray[4])) {
-                                    // httpc post -h key:value -f "file name" url
-                                    if (!compareStringsWithChar("Content-Type:application/json", commandLineStringArray[3]))
-                                        return "Content-Type has to be application/json";
+                                } else if (compareStringsWithChar("-f", commandLineStringArray[commandLineStringArray.length - 3])) {
+                                    // httpc post -v -h key:value -f "file name" url
 
-                                    String jsonFileContentString = readJSONFile(commandLineStringArray[5]);
+                                    String jsonFileContentString = readJSONFile(commandLineStringArray[commandLineStringArray.length - 2]);
 
                                     if (jsonFileContentString == "Failed")
                                         return "Failed to read JSON file.";
 
-                                    if (!verifyURL(commandLineStringArray[6]))
+                                    if (!verifyURL(commandLineStringArray[commandLineStringArray.length - 1]))
                                         return "Invalid syntax";
 
                                     urlString = currentURL;
@@ -329,31 +301,236 @@ public class httpcServer {
                                     else if (redirectionResultCode == 1)
                                         urlString = redirectedURL;
 
+                                    // There could be multiple header parameters
+                                    if (!extractHeaderParameters(commandLineStringArray, 4, commandLineStringArray.length - 3))
+                                        return "Invalid syntax";
+
                                     // Provided data
+                                    // verbose output: hasVerbosityString
                                     // JSON file data: jsonFileContentString
                                     // url: urlString
 
-                                    return redirectionResultString + jsonFileContentString + " " + urlString + " 4";
+                                    // For debugging
+                                    for (String keyString : headerKeyValuePairHashMap.keySet())
+                                        System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
+
+                                    return redirectionResultString + "\n" + jsonFileContentString + " " + urlString + " 8";
 //                                    return someMethods(someStrings);
                                 } else {
                                     return "Invalid syntax";
                                 }
                             } else {
+                                // httpc post -v url
+
+                                // Check if it contains the exact number of terms
+                                if (commandLineStringArray.length != 4)
+                                    return "Invalid syntax";
+
+                                if (!verifyURL(commandLineStringArray[3]))
+                                    return "Invalid syntax";
+
+                                urlString = currentURL;
+
+                                // Test the URL to redirect or not
+                                int redirectionResultCode = detectRedirection(urlString);
+
+                                if (redirectionResultCode == -1)
+                                    return "Redirection errors.";
+                                else if (redirectionResultCode == 0)
+                                    redirectionResultString = "No redirection detected\n";
+                                else if (redirectionResultCode == 1)
+                                    urlString = redirectedURL;
+
+                                // There could be multiple header parameters
+                                if (!extractHeaderParameters(commandLineStringArray, 4, commandLineStringArray.length - 3))
+                                    return "Invalid syntax";
+
+                                // Provided data
+                                // verbose output: hasVerbosityString
+                                // url: urlString
+
+                                return redirectionResultString + "\n" + verbosityString + "\n" + urlString + " 5";
+                            }
+                        } else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
+                            if (commandLineStringArray.length >= 5 & !compareStringsWithChar("-d", commandLineStringArray[commandLineStringArray.length - 3]) & !compareStringsWithChar("-f", commandLineStringArray[commandLineStringArray.length - 3])) {
+                                // httpc post -h key:value url
+                                if (!verifyURL(commandLineStringArray[commandLineStringArray.length - 1]))
+                                    return "Invalid syntax";
+
+                                urlString = currentURL;
+
+                                // Test the URL to redirect or not
+                                int redirectionResultCode = detectRedirection(urlString);
+
+                                if (redirectionResultCode == -1)
+                                    return "Redirection errors.";
+                                else if (redirectionResultCode == 0)
+                                    redirectionResultString = "No redirection detected\n";
+                                else if (redirectionResultCode == 1)
+                                    urlString = redirectedURL;
+
+                                // There could be multiple header parameters
+                                if (!extractHeaderParameters(commandLineStringArray, 3, commandLineStringArray.length - 1))
+                                    return "Invalid syntax";
+
+                                // Provided data
+                                // verbose output: hasVerbosityString
+                                // header parameter list: headerKeyValuePairHashMap
+                                // url: urlString
+
+                                // For debugging
+                                for (String keyString : headerKeyValuePairHashMap.keySet())
+                                    System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
+
+                                return redirectionResultString + "\n" + urlString + " 2";
+//                                return someMethods(someStrings);
+                            } else if (compareStringsWithChar("-d", commandLineStringArray[commandLineStringArray.length - 3])) {
+                                // httpc post -h key:value -d "inline data" url
+
+                                // Verify the format of inline data
+
+                                // Remove empty bytes from the string
+                                String inlineDataString = commandLineStringArray[commandLineStringArray.length - 2].replaceAll("\u0000.*", "");
+
+                                // Check if it is empty
+                                if (!compareStringsWithChar("", inlineDataString)) {
+                                    // Check the inline data format, it should be wrapped by a pair of apostrophes
+                                    if (inlineDataString.charAt(0) == 39 & inlineDataString.charAt(inlineDataString.length() - 1) == 39) {
+                                        // Remove the apostrophes around the url
+                                        inlineDataString = inlineDataString.replaceAll("'", "");
+
+                                        // Inside the the pair of apostrophes, it should be wrapped by a pair of curly brackets
+                                        if (inlineDataString.charAt(0) == 123 & inlineDataString.charAt(inlineDataString.length() - 1) == 125) {
+
+                                            boolean hasOneLeftCurlyBracket = false;
+                                            boolean hasOneRightCurlyBracket = false;
+
+                                            // Check if there is only one left and right curly bracket, otherwise it is invalid syntax
+                                            for (int characterIndex = 0; characterIndex < inlineDataString.length() - 1; characterIndex++) {
+                                                if (inlineDataString.charAt(characterIndex) == 123) {
+                                                    if (!hasOneLeftCurlyBracket)
+                                                        hasOneLeftCurlyBracket = true;
+                                                    else
+                                                        return "Invalid syntax";
+                                                }
+
+                                                if (inlineDataString.charAt(characterIndex) == 125) {
+                                                    if (!hasOneRightCurlyBracket)
+                                                        hasOneRightCurlyBracket = true;
+                                                    else
+                                                        return "Invalid syntax";
+                                                }
+                                            }
+
+                                            if (!verifyURL(commandLineStringArray[commandLineStringArray.length - 1]))
+                                                return "Invalid syntax";
+
+                                            urlString = currentURL;
+
+                                            // Test the URL to redirect or not
+                                            int redirectionResultCode = detectRedirection(urlString);
+
+                                            if (redirectionResultCode == -1)
+                                                return "Redirection errors.";
+                                            else if (redirectionResultCode == 0)
+                                                redirectionResultString = "No redirection detected\n";
+                                            else if (redirectionResultCode == 1)
+                                                urlString = redirectedURL;
+
+                                            // There could be multiple header parameters
+                                            if (!extractHeaderParameters(commandLineStringArray, 3, commandLineStringArray.length - 3))
+                                                return "Invalid syntax";
+
+                                            // Provided data
+                                            // verbose output: hasVerbosityString
+                                            // header parameter list: headerKeyValuePairHashMap
+                                            // inline data: inlineDataString
+                                            // url: urlString
+
+                                            // For debugging
+                                            for (String keyString : headerKeyValuePairHashMap.keySet())
+                                                System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
+
+                                            return redirectionResultString + "\n" + inlineDataString + " " + urlString + " 3";
+//                                                return someMethods(someStrings);
+                                        } else {
+                                            return "Invalid syntax";
+                                        }
+                                    } else {
+                                        return "Invalid syntax";
+                                    }
+                                } else {
+                                    return "Invalid syntax";
+                                }
+                            } else if (compareStringsWithChar("-f", commandLineStringArray[commandLineStringArray.length - 3])) {
+                                // httpc post -h key:value -f "file name" url
+
+                                String jsonFileContentString = readJSONFile(commandLineStringArray[commandLineStringArray.length - 2]);
+
+                                if (jsonFileContentString == "Failed")
+                                    return "Failed to read JSON file.";
+
+                                if (!verifyURL(commandLineStringArray[commandLineStringArray.length - 1]))
+                                    return "Invalid syntax";
+
+                                urlString = currentURL;
+
+                                // Test the URL to redirect or not
+                                int redirectionResultCode = detectRedirection(urlString);
+
+                                if (redirectionResultCode == -1)
+                                    return "Redirection errors.";
+                                else if (redirectionResultCode == 0)
+                                    redirectionResultString = "No redirection detected\n";
+                                else if (redirectionResultCode == 1)
+                                    urlString = redirectedURL;
+
+                                // There could be multiple header parameters
+                                if (!extractHeaderParameters(commandLineStringArray, 3, commandLineStringArray.length - 3))
+                                    return "Invalid syntax";
+
+                                // Provided data
+                                // verbose output: hasVerbosityString
+                                // JSON file data: jsonFileContentString
+                                // url: urlString
+
+                                // For debugging
+                                for (String keyString : headerKeyValuePairHashMap.keySet())
+                                    System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
+
+
+                                return redirectionResultString + "\n" + jsonFileContentString + " " + urlString + " 4";
+//                                    return someMethods(someStrings);
+                            } else {
                                 return "Invalid syntax";
                             }
-                        } else if (compareStringsWithChar("-d", commandLineStringArray[3])) {
-                            // httpc post -h Content-Type:application/json -d "inline data" url
-
-                            // Check if it contains the exact number of terms
-                            if (commandLineStringArray.length != 7)
-                                return "Invalid syntax";
-
-
-//                            return someMethods(someStrings);
                         } else {
                             // httpc post url
 
-                            return "Please provide Data to be posted !!!";
+                            // Check if it contains the exact number of terms
+                            if (commandLineStringArray.length != 3)
+                                return "Invalid syntax";
+
+                            if (!verifyURL(commandLineStringArray[2]))
+                                return "Invalid syntax";
+
+                            urlString = currentURL;
+
+                            // Test the URL to redirect or not
+                            int redirectionResultCode = detectRedirection(urlString);
+
+                            if (redirectionResultCode == -1)
+                                return "Redirection errors.";
+                            else if (redirectionResultCode == 0)
+                                redirectionResultString = "No redirection detected\n";
+                            else if (redirectionResultCode == 1)
+                                urlString = redirectedURL;
+
+                            // Provided data
+                            // verbose output: hasVerbosityString
+                            // url: urlString
+
+                            return redirectionResultString + "\n" + urlString + " 1";
                         }
                     } else if (compareStringsWithChar("-v", commandLineStringArray[1])) {
                         // httpc -v url -o file.txt
@@ -488,6 +665,34 @@ public class httpcServer {
             return 1;
     }
 
+    private boolean extractHeaderParameters(String[] commandLineStringArray, int startingIndex, int endingIndex) {
+        headerKeyValuePairHashMap = new HashMap<String, String>();
+
+        for (int index = startingIndex; index < endingIndex; index++) {
+            boolean hasOneColon = false;
+
+            // Check if there is exactly one colon in each pair, otherwise it is invalid syntax
+            for (int characterIndex = 0; characterIndex < commandLineStringArray[index].length() - 1; characterIndex++) {
+                if (commandLineStringArray[index].charAt(characterIndex) == ':') {
+                    if (!hasOneColon)
+                        hasOneColon = true;
+                    else
+                        return false;
+                }
+            }
+
+            // It is invalid if it doesn't contain a colon
+            if (!hasOneColon)
+                return false;
+
+            String[] keyValueString = commandLineStringArray[index].split(":");
+
+            headerKeyValuePairHashMap.put(keyValueString[0], keyValueString[1]);
+        }
+
+        return true;
+    }
+
     private boolean verifyURL(String urlString) {
         // Remove empty bytes from the string
         urlString = urlString.replaceAll("\u0000.*", "");
@@ -539,7 +744,6 @@ public class httpcServer {
                 System.out.println("Key '" + keyString + "' not found");
             else
                 return headerValueString;
-
         } catch (Exception e) {
             e.printStackTrace();
         }
