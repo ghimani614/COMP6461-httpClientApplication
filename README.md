@@ -47,5 +47,5 @@ Third-party libraries: JSON.simple 1.1: Used for reading and parsing JSON files.
 
 ## Implementation
 Rules:
-1. All reserved command keywords are Case sentive, but JSON data and URL's are not.
+1. All reserved command keywords are Case sensitive, but JSON data and URLs are not.
 2. It is allowed to have multiple space characters between each term, like "httpc  help   get ". However, starting with space is invalid, it must starts with "httpc" without any exception.
