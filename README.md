@@ -20,22 +20,27 @@ Rules:
 1. All reserved command keywords are case sensitive, but JSON data and URLs are not.
 2. It is not allowed to have multiple space characters between each term, like "httpc  help   get ". Starting with space is invalid, it must starts with "httpc" without any exception.
 3. URL has to be wrapped by a pair of apostrophes, like 'http://httpbin.org/post'.
-4. This program has assumed Content-Type to be application/json in any situation, changing Content-Type using POST command has no effect.
+4. This program has assumed Content-Type to be application/json in any POST operation, changing Content-Type using POST command has no effect.
 
 
 Syntax parser
 
-We use string manipulation to parse the command line. The entire string will be broken into several chunks, and syntactic correctness will be verified by comparing the content of each chunk. The method parseCommandLine(String commandLineString) in httpcServer class .
+We use string manipulation to parse the command line. The entire string will be broken into several chunks, and syntactic correctness will be verified by comparing the content of each chunk. The method parseCommandLine(String commandLineString) in httpcServer class implemented this feature.
 
 
 GET and POST
 
-We used Java 11 HttpURLConnection to implement the functionalities of GET and POST.
+We used Java 11 HttpURLConnection to implement the functionalities of GET and POST. The method getHttpResponse(String urlString) and postHttpResponse(String urlString, HashMap<String, String> headerKeyValuePairHashMap, String jsonData) in httpcServer class implemented corresponding features.
+
+
+Verbose option
+
+We used Java URLConnection to implement it. It is able to get header values by calling connection.getHeaderField(keyString). The method getHeaderValueByKey(String urlString, String keyString) in httpcServer class implemented this feature.
 
 
 Redirection
 
-The attribute maximumRedirectionTimes defines the limit of redirection times in order to prevent infinite loop.
+Normally, response code starts with 3 indicates redirection, for example: 301(Moved Permanently), 302(Temporary Redirect). Before executing the command, the target URL will be detected if it redirects or not, if yes, obtain the directed URL by calling connection.getHeaderField("Location"). The attribute maximumRedirectionTimes defines the limit of redirection times in order to prevent infinite loop, default value is 5. The method detectRedirection(String urlString) in httpcServer class implemented this feature.
 
 
 ## Examples
@@ -73,8 +78,11 @@ httpc post -v -h key1:value1 key2:value2 -d '{"Assignment": 1}' 'http://httpbin.
 httpc post -v -h key1:value1 key2:value2 -f Data.json 'http://httpbin.org/post'
 
 
-## Detail
-1. On macOS, if user gives the txt file an empty name using command: "httpc -v 'http://httpbin.org/get?course=networking&assignment=1' -o .txt", the output txt file may become a hidden file. It is necessary to press shift + command + . to show and access hidden files. 
+## Details
+1. The string comparision has to be done in a different way, because string converted from the byte array of client/server is in UTF-8 format, but the Java declared string attributes are in UTF-16 format, which means string.equals() or string.compareTo() don't work in this case. Instead, we compare each character of strings by using string.charAt(). The method compareStringsWithChar(String string1, String string2) in httpcServer class implemented this feature.
+2. Extra space characters may occur in the JSON string of the command line, which affeacts the string splitting of syntax parsing. To solve this problem, we preprocess the command line by removing unnecessary space characters. The method preprocessCommandLine(String commandLineString) in httpcServer class implemented this feature.
+3. We assume all the files to be read/written are located in the root folder.
+4. On macOS, if user gives the txt file an empty name using command: "httpc -v 'http://httpbin.org/get?course=networking&assignment=1' -o .txt", the output txt file may become a hidden file. It is necessary to press shift + command + . to show and access hidden files. 
 
 
 ## References
