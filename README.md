@@ -42,7 +42,8 @@ Environment:
 1. Java 9 or later
 2. Intellij Community 2020.2
 
-Third-party libraries: JSON.simple 1.1: Used for reading and parsing JSON files. 
+Third-party libraries:
+1. JSON.simple 1.1: Used for reading and parsing JSON files. 
 
 
 ## Implementation
