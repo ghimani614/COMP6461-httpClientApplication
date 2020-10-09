@@ -33,29 +33,29 @@ Helper
 
 GET
 1. httpc get url
--httpc get 'http://httpbin.org/get?course=networking&assignment=1'
+\httpc get 'http://httpbin.org/get?course=networking&assignment=1'
 2. httpc get -v url
--httpc get -v 'http://httpbin.org/get?course=networking&assignment=1'
+\httpc get -v 'http://httpbin.org/get?course=networking&assignment=1'
 3. httpc get -h key:value url
--httpc get -h key1:value1 key2:value2 'http://httpbin.org/get?course=networking&assignment=1'
+\httpc get -h key1:value1 key2:value2 'http://httpbin.org/get?course=networking&assignment=1'
 
 POST
 1. httpc post url
--httpc post 'http://httpbin.org/post'
+\httpc post 'http://httpbin.org/post'
 2. httpc post -h key:value url
--httpc post -h key1:value1 key2:value2 'http://httpbin.org/post'
+\httpc post -h key1:value1 key2:value2 'http://httpbin.org/post'
 3. httpc post -h key:value -d "inline data" url
--httpc post -h key1:value1 key2:value2 -d '{"Assignment": 1}' 'http://httpbin.org/post'
+\httpc post -h key1:value1 key2:value2 -d '{"Assignment": 1}' 'http://httpbin.org/post'
 4. httpc post -h key:value -f "file name" url
--httpc post -h key1:value1 key2:value2 -f Data.json 'http://httpbin.org/post'
+\httpc post -h key1:value1 key2:value2 -f Data.json 'http://httpbin.org/post'
 5. httpc post -v url
--httpc post -v 'http://httpbin.org/post'
+\httpc post -v 'http://httpbin.org/post'
 6. httpc post -v -h key:value url
--httpc post -v -h key1:value1 key2:value2 'http://httpbin.org/post'
+\httpc post -v -h key1:value1 key2:value2 'http://httpbin.org/post'
 7. httpc post -v -h key:value -d "inline data" url
--httpc post -v -h key1:value1 key2:value2 -d '{"Assignment": 1}' 'http://httpbin.org/post'
+\httpc post -v -h key1:value1 key2:value2 -d '{"Assignment": 1}' 'http://httpbin.org/post'
 8. httpc post -v -h key:value -f "file name" url
--httpc post -v -h key1:value1 key2:value2 -f Data.json 'http://httpbin.org/post'
+\httpc post -v -h key1:value1 key2:value2 -f Data.json 'http://httpbin.org/post'
 
 
 ## Detail
