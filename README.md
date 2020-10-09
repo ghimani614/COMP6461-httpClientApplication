@@ -12,11 +12,6 @@ There are 5 applications in this example for the echo and time protocols.
 ### Echo Protocol
 - **Blocking Echo Server** - an implementation of the echo server using a blocking NIO socket
 - **Blocking Echo Client** - an implementation of the echo client using a blocking NIO socket
-- **Multiplex Echo Server** - an implementation of the cho server using the select mechanism of the NIO socket
-
-### Time Protocol
-- **Blocking Time Server** - an implementation of the time server using a blocking NIO socket
-- **Blocking Time Client** - an implementation of the time client using a blocking NIO socket
 
 ## Compile and package
 1. Open the terminal and cd to the `netsample` directory
@@ -35,14 +30,22 @@ Once your echo server client is listening, you can use the echo client by this c
 `java -cp target/netsample-1.0-SNAPSHOT-jar-with-dependencies.jar ca.concordia.echo.BlockingEchoClient --host localhost --port 8007`
 If there is no error, you should be able to type into your console; and receive an echo from the echo server.
 
-### Blocking Time Server
-`java -cp target/netsample-1.0-SNAPSHOT-jar-with-dependencies.jar ca.concordia.time.BlockingTimeServer --port 8037`
 
-### Blocking Time Client
-`java -cp target/netsample-1.0-SNAPSHOT-jar-with-dependencies.jar ca.concordia.time.BlockingTimeClient --host localhost --port 8037`
+## Description
+This Java project implements all the functionalities of COMP 6461 Lab Assignment 1, including all the optional tasks(bonus marks). 
 
-### Multiplex Echo Server
-This implementation demonstrates how to use `select` mechanism to handle multiple clients with a single thread in non-blocking manner. This example is useful for your future assignment.
 
-## Using with IDE
-You can either Intellij, Eclipse, or Netbeans to run, and extend these examples.
+## Configuration
+This project was developed using Intellij, so Intellij is required. No additional configuration is required, Intellij IDE will handle and build the project automatically. 
+
+Environment:
+1. Java 9 or later
+2. Intellij Community 2020.2
+
+Third-party libraries: JSON.simple 1.1: Used for reading and parsing JSON files. 
+
+
+## Implementation
+Rules:
+1. All reserved command keywords are Case sentive, but JSON data and URL's are not.
+2. It is allowed to have multiple space characters between each term, like "httpc  help   get ". However, starting with space is invalid, it must starts with "httpc" without any exception.
