@@ -197,7 +197,7 @@ public class httpcServer {
                                     // For debugging
                                     for (String keyString : headerKeyValuePairHashMap.keySet())
                                         System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
-                                    postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,null);
+                                    postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, null);
                                     return redirectionResultString + "\n" + verbosityString + "\n" + urlString + " 6";
 //                            return someMethods(someStrings);
                                 } else if (compareStringsWithChar("-d", commandLineStringArray[commandLineStringArray.length - 3])) {
@@ -267,7 +267,7 @@ public class httpcServer {
                                                 for (String keyString : headerKeyValuePairHashMap.keySet())
                                                     System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
 
-                                                postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,inlineDataString);
+                                                postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, inlineDataString);
                                                 return redirectionResultString + "\n" + inlineDataString + " " + urlString + " 7";
 //                                                return someMethods(someStrings);
                                             } else {
@@ -316,7 +316,7 @@ public class httpcServer {
                                     for (String keyString : headerKeyValuePairHashMap.keySet())
                                         System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
 
-                                    postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,jsonFileContentString);
+                                    postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, jsonFileContentString);
                                     return redirectionResultString + "\n" + jsonFileContentString + " " + urlString + " 8";
 //                                    return someMethods(someStrings);
                                 } else {
@@ -351,7 +351,7 @@ public class httpcServer {
                                 // Provided data
                                 // verbose output: hasVerbosityString
                                 // url: urlString
-                                postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,null);
+                                postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, null);
                                 return redirectionResultString + "\n" + verbosityString + "\n" + urlString + " 5";
                             }
                         } else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
@@ -384,7 +384,7 @@ public class httpcServer {
                                 // For debugging
                                 for (String keyString : headerKeyValuePairHashMap.keySet())
                                     System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
-                                postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,null);
+                                postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, null);
                                 return redirectionResultString + "\n" + urlString + " 2";
 //                                return someMethods(someStrings);
                             } else if (compareStringsWithChar("-d", commandLineStringArray[commandLineStringArray.length - 3])) {
@@ -453,7 +453,7 @@ public class httpcServer {
                                             // For debugging
                                             for (String keyString : headerKeyValuePairHashMap.keySet())
                                                 System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
-                                            postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,inlineDataString);
+                                            postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, inlineDataString);
                                             return redirectionResultString + "\n" + inlineDataString + " " + urlString + " 3";
 //                                                return someMethods(someStrings);
                                         } else {
@@ -501,7 +501,7 @@ public class httpcServer {
                                 // For debugging
                                 for (String keyString : headerKeyValuePairHashMap.keySet())
                                     System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
-                                postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,jsonFileContentString);
+                                postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, jsonFileContentString);
 
                                 return redirectionResultString + "\n" + jsonFileContentString + " " + urlString + " 4";
 //                                    return someMethods(someStrings);
@@ -533,7 +533,7 @@ public class httpcServer {
                             // Provided data
                             // verbose output: hasVerbosityString
                             // url: urlString
-                            postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,null);
+                            postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, null);
                             return redirectionResultString + "\n" + urlString + " 1";
                         }
                     } else if (compareStringsWithChar("-v", commandLineStringArray[1])) {
@@ -827,15 +827,15 @@ public class httpcServer {
             connection.setRequestMethod("POST");
             connection.setRequestProperty("User-Agent", "Java client");
             for (String keyString : headerKeyValuePairHashMap.keySet())
-            connection.setRequestProperty(keyString, headerKeyValuePairHashMap.get(keyString));
+                connection.setRequestProperty(keyString, headerKeyValuePairHashMap.get(keyString));
 
-            String headerString = connection.getHeaderField("Server")+
-            connection.getHeaderField("Date")+ "\n" +
-            connection.getHeaderField("Content-Type")+ "\n" +
-            connection.getHeaderField("Content-Length")+ "\n" +
-            connection.getHeaderField("Connection")+ "\n" +
-            connection.getHeaderField("Access-Control-Allow-Origin")+ "\n" +
-            connection.getHeaderField("Access-Control-Allow-Credentials");
+            String headerString = connection.getHeaderField("Server") +
+                    connection.getHeaderField("Date") + "\n" +
+                    connection.getHeaderField("Content-Type") + "\n" +
+                    connection.getHeaderField("Content-Length") + "\n" +
+                    connection.getHeaderField("Connection") + "\n" +
+                    connection.getHeaderField("Access-Control-Allow-Origin") + "\n" +
+                    connection.getHeaderField("Access-Control-Allow-Credentials");
 
             System.out.println(headerString);
 
@@ -858,7 +858,7 @@ public class httpcServer {
 
         return stringBuilder.toString();
         //to write functionality
-       // return urlString;
+        // return urlString;
     }
 
     public static void main(String[] args) throws IOException {

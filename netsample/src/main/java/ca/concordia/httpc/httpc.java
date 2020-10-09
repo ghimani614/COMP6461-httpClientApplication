@@ -19,28 +19,7 @@ public class httpc {
 
     // readFully reads until the request is fulfilled or the socket is closed
     private static void readFully(SocketChannel socket, ByteBuffer buf, int size) throws IOException {
-//        size = buf.remaining();
-//        System.out.println(size + " ??????????");
-//        System.out.println(" **** ");
-//        System.out.println(buf.position() + " ??????????");
         socket.read(buf);
-//        System.out.println(buf.position() + " ^");
-//        System.out.println(buf.remaining() + " ??????????");
-
-
-//        while (buf.position() < size) {
-//            int n = socket.read(buf);
-//            System.out.println(buf.position() + " {{{{");
-//            System.out.println(n + " ))))))");
-//            if (n == -1) {
-//                System.out.println("bbbbbb");
-//                break;
-//            }
-//        }
-//
-//        if (buf.position() != size) {
-//            throw new EOFException();
-//        }
     }
 
     private static void readEchoAndRepeat(SocketChannel socket) throws IOException {
