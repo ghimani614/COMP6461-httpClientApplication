@@ -3,7 +3,7 @@
 This Java project implements all the functionalities of COMP 6461 Lab Assignment 1, including all the optional tasks(bonus marks). It was developed based on the blocking echo server template.
 
 ## Requirement
-1. [Oracle JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+1. [Oracle JDK 11](https://www.oracle.com/java/technologies/javase-jdk11-downloads.html)
 2. [Apache Maven](https://maven.apache.org/) 
 3. [Intellij Community 2020.2](https://www.jetbrains.com/idea/download/) 
 
@@ -21,6 +21,21 @@ Rules:
 2. It is not allowed to have multiple space characters between each term, like "httpc  help   get ". Starting with space is invalid, it must starts with "httpc" without any exception.
 3. URL has to be wrapped by a pair of apostrophes, like 'http://httpbin.org/post'.
 4. This program has assumed Content-Type to be application/json in any situation, changing Content-Type using POST command has no effect.
+
+
+Syntax parser
+
+We use string manipulation to parse the command line. The entire string will be broken into several chunks, and syntactic correctness will be verified by comparing the content of each chunk. The method parseCommandLine(String commandLineString) in httpcServer class .
+
+
+GET and POST
+
+We used Java 11 HttpURLConnection to implement the functionalities of GET and POST.
+
+
+Redirection
+
+The attribute maximumRedirectionTimes defines the limit of redirection times in order to prevent infinite loop.
 
 
 ## Examples
@@ -60,3 +75,11 @@ httpc post -v -h key1:value1 key2:value2 -f Data.json 'http://httpbin.org/post'
 
 ## Detail
 1. On macOS, if user gives the txt file an empty name using command: "httpc -v 'http://httpbin.org/get?course=networking&assignment=1' -o .txt", the output txt file may become a hidden file. It is necessary to press shift + command + . to show and access hidden files. 
+
+
+## References
+
+1. http://zetcode.com/java/getpostrequest/
+2. https://www.tutorialspoint.com/json_simple/json_simple_quick_guide.htm
+3. https://stackoverflow.com/questions/20806617/retrieve-the-final-location-of-a-given-url-in-java
+4. https://www.codota.com/code/java/methods/java.net.URLConnection/getHeaderField

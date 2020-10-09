@@ -1,6 +1,5 @@
 package ca.concordia.httpc;
 
-import com.sun.xml.internal.ws.policy.EffectiveAlternativeSelector;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.slf4j.Logger;
