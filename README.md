@@ -47,5 +47,7 @@ Third-party libraries: JSON.simple 1.1: Used for reading and parsing JSON files.
 
 ## Implementation
 Rules:
-1. All reserved command keywords are Case sensitive, but JSON data and URLs are not.
-2. It is allowed to have multiple space characters between each term, like "httpc  help   get ". However, starting with space is invalid, it must starts with "httpc" without any exception.
+1. All reserved command keywords are case sensitive, but JSON data and URLs are not.
+2. It is not allowed to have multiple space characters between each term, like "httpc  help   get ". Starting with space is invalid, it must starts with "httpc" without any exception.
+3. URL has to be wrapped by a pair of apostrophes, like 'http://httpbin.org/post'.
+4. This program has assumed Content-Type to be application/json in any situation, changing Content-Type using POST command has no effect.
