@@ -28,14 +28,13 @@ public class httpcServer {
     private String currentURL = "";
     private String redirectedURL = "", redirectionResultString = "";
 
-    private boolean hasVerbosityString = false;
     private String verbosityString = "";
 
     private HashMap<String, String> headerKeyValuePairHashMap;
 
     private void readEchoAndRepeat(SocketChannel socket) {
         try (SocketChannel client = socket) {
-            ByteBuffer buf = ByteBuffer.allocate(1024);
+            ByteBuffer buf = ByteBuffer.allocate(2048);
             for (; ; ) {
                 int nr = client.read(buf);
 
@@ -74,8 +73,6 @@ public class httpcServer {
     private String parseCommandLine(String commandLineString) {
         commandLineString = preprocessCommandLine(commandLineString);
 
-        hasVerbosityString = false;
-
         String[] commandLineStringArray = commandLineString.split(" ");
 
         if (commandLineStringArray.length > 0) {
@@ -100,11 +97,22 @@ public class httpcServer {
                     } else if (compareStringsWithChar("get", commandLineStringArray[1])) {
                         if (compareStringsWithChar("-v", commandLineStringArray[2])) {
                             // httpc get -v url
+                            if (!verifyURL(commandLineStringArray[3]))
+                                return "Invalid syntax";
 
-                            // Remove the apostrophes around the url
-                            urlString = commandLineStringArray[3].replaceAll("'", "");
+                            urlString = currentURL;
 
-                            return getHeaderValueByKey(urlString, null) + "\nServer: " + getHeaderValueByKey(urlString, "Server") + "\nDate: " + getHeaderValueByKey(urlString, "Date") + "\nContent-Type: " + getHeaderValueByKey(urlString, "Content-Type") + "\nContent-Length: " + getHeaderValueByKey(urlString, "Content-Length") + "\nConnection: " + getHeaderValueByKey(urlString, "Connection") + "\nAccess-Control-Allow-Origin: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Origin") + "\nAccess-Control-Allow-Credentials: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Credentials") + "\n" + getHttpResponse(urlString);
+                            // Test the URL to redirect or not
+                            int redirectionResultCode = detectRedirection(urlString);
+
+                            if (redirectionResultCode == -1)
+                                return "Redirection errors.";
+                            else if (redirectionResultCode == 0)
+                                redirectionResultString = "No redirection detected\n";
+                            else if (redirectionResultCode == 1)
+                                urlString = redirectedURL;
+
+                            return redirectionResultString + "\n" + getHeaderValueByKey(urlString, null) + "\nServer: " + getHeaderValueByKey(urlString, "Server") + "\nDate: " + getHeaderValueByKey(urlString, "Date") + "\nContent-Type: " + getHeaderValueByKey(urlString, "Content-Type") + "\nContent-Length: " + getHeaderValueByKey(urlString, "Content-Length") + "\nConnection: " + getHeaderValueByKey(urlString, "Connection") + "\nAccess-Control-Allow-Origin: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Origin") + "\nAccess-Control-Allow-Credentials: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Credentials") + "\n" + getHttpResponse(urlString);
                         } else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
                             // httpc get -h key:value url
                             if (!verifyURL(commandLineStringArray[commandLineStringArray.length - 1]))
@@ -141,7 +149,7 @@ public class httpcServer {
                                 index += 1;
                             }
 
-                            return verbosityString;
+                            return redirectionResultString + "\n" + verbosityString;
                         } else {
                             // httpc get url
 
@@ -168,8 +176,6 @@ public class httpcServer {
                                 if (commandLineStringArray.length >= 6 & !compareStringsWithChar("-d", commandLineStringArray[commandLineStringArray.length - 3]) & !compareStringsWithChar("-f", commandLineStringArray[commandLineStringArray.length - 3])) {
                                     // httpc post -v -h key:value url
 
-                                    hasVerbosityString = true;
-
                                     if (!verifyURL(commandLineStringArray[commandLineStringArray.length - 1]))
                                         return "Invalid syntax";
 
@@ -190,16 +196,16 @@ public class httpcServer {
                                         return "Invalid syntax";
 
                                     // Provided data
-                                    // verbose output: hasVerbosityString
                                     // header parameter list: headerKeyValuePairHashMap
                                     // url: urlString
 
                                     // For debugging
                                     for (String keyString : headerKeyValuePairHashMap.keySet())
                                         System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
-                                    postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, null);
-                                    return redirectionResultString + "\n" + verbosityString + "\n" + urlString + " 6";
-//                            return someMethods(someStrings);
+
+                                    verbosityString = getHeaderValueByKey(urlString, null) + "\nServer: " + getHeaderValueByKey(urlString, "Server") + "\nDate: " + getHeaderValueByKey(urlString, "Date") + "\nContent-Type: " + getHeaderValueByKey(urlString, "Content-Type") + "\nContent-Length: " + getHeaderValueByKey(urlString, "Content-Length") + "\nConnection: " + getHeaderValueByKey(urlString, "Connection") + "\nAccess-Control-Allow-Origin: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Origin") + "\nAccess-Control-Allow-Credentials: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Credentials") + "\n";
+
+                                    return redirectionResultString + "\n" + verbosityString + "\n" + postHttpResponse(urlString, headerKeyValuePairHashMap, null);
                                 } else if (compareStringsWithChar("-d", commandLineStringArray[commandLineStringArray.length - 3])) {
                                     // httpc post -v -h key:value -d "inline data" url
 
@@ -258,7 +264,6 @@ public class httpcServer {
                                                     return "Invalid syntax";
 
                                                 // Provided data
-                                                // verbose output: hasVerbosityString
                                                 // header parameter list: headerKeyValuePairHashMap
                                                 // inline data: inlineDataString
                                                 // url: urlString
@@ -267,9 +272,9 @@ public class httpcServer {
                                                 for (String keyString : headerKeyValuePairHashMap.keySet())
                                                     System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
 
-                                                postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, inlineDataString);
-                                                return redirectionResultString + "\n" + inlineDataString + " " + urlString + " 7";
-//                                                return someMethods(someStrings);
+                                                verbosityString = getHeaderValueByKey(urlString, null) + "\nServer: " + getHeaderValueByKey(urlString, "Server") + "\nDate: " + getHeaderValueByKey(urlString, "Date") + "\nContent-Type: " + getHeaderValueByKey(urlString, "Content-Type") + "\nContent-Length: " + getHeaderValueByKey(urlString, "Content-Length") + "\nConnection: " + getHeaderValueByKey(urlString, "Connection") + "\nAccess-Control-Allow-Origin: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Origin") + "\nAccess-Control-Allow-Credentials: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Credentials") + "\n";
+
+                                                return redirectionResultString + "\n" + verbosityString + "\n" + postHttpResponse(urlString, headerKeyValuePairHashMap, inlineDataString);
                                             } else {
                                                 return "Invalid syntax";
                                             }
@@ -307,7 +312,6 @@ public class httpcServer {
                                         return "Invalid syntax";
 
                                     // Provided data
-                                    // verbose output: hasVerbosityString
                                     // header parameter list: headerKeyValuePairHashMap
                                     // JSON file data: jsonFileContentString
                                     // url: urlString
@@ -316,9 +320,9 @@ public class httpcServer {
                                     for (String keyString : headerKeyValuePairHashMap.keySet())
                                         System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
 
-                                    postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, jsonFileContentString);
-                                    return redirectionResultString + "\n" + jsonFileContentString + " " + urlString + " 8";
-//                                    return someMethods(someStrings);
+                                    verbosityString = getHeaderValueByKey(urlString, null) + "\nServer: " + getHeaderValueByKey(urlString, "Server") + "\nDate: " + getHeaderValueByKey(urlString, "Date") + "\nContent-Type: " + getHeaderValueByKey(urlString, "Content-Type") + "\nContent-Length: " + getHeaderValueByKey(urlString, "Content-Length") + "\nConnection: " + getHeaderValueByKey(urlString, "Connection") + "\nAccess-Control-Allow-Origin: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Origin") + "\nAccess-Control-Allow-Credentials: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Credentials") + "\n";
+
+                                    return redirectionResultString + "\n" + verbosityString + "\n" + postHttpResponse(urlString, headerKeyValuePairHashMap, jsonFileContentString);
                                 } else {
                                     return "Invalid syntax";
                                 }
@@ -351,8 +355,10 @@ public class httpcServer {
                                 // Provided data
                                 // verbose output: hasVerbosityString
                                 // url: urlString
-                                postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, null);
-                                return redirectionResultString + "\n" + verbosityString + "\n" + urlString + " 5";
+
+                                verbosityString = getHeaderValueByKey(urlString, null) + "\nServer: " + getHeaderValueByKey(urlString, "Server") + "\nDate: " + getHeaderValueByKey(urlString, "Date") + "\nContent-Type: " + getHeaderValueByKey(urlString, "Content-Type") + "\nContent-Length: " + getHeaderValueByKey(urlString, "Content-Length") + "\nConnection: " + getHeaderValueByKey(urlString, "Connection") + "\nAccess-Control-Allow-Origin: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Origin") + "\nAccess-Control-Allow-Credentials: " + getHeaderValueByKey(urlString, "Access-Control-Allow-Credentials") + "\n";
+
+                                return redirectionResultString + "\n" + verbosityString + "\n" + postHttpResponse(urlString, headerKeyValuePairHashMap, null);
                             }
                         } else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
                             if (commandLineStringArray.length >= 5 & !compareStringsWithChar("-d", commandLineStringArray[commandLineStringArray.length - 3]) & !compareStringsWithChar("-f", commandLineStringArray[commandLineStringArray.length - 3])) {
@@ -384,9 +390,8 @@ public class httpcServer {
                                 // For debugging
                                 for (String keyString : headerKeyValuePairHashMap.keySet())
                                     System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
-                                postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, null);
-                                return redirectionResultString + "\n" + urlString + " 2";
-//                                return someMethods(someStrings);
+
+                                return redirectionResultString + "\n" + postHttpResponse(urlString, headerKeyValuePairHashMap, null);
                             } else if (compareStringsWithChar("-d", commandLineStringArray[commandLineStringArray.length - 3])) {
                                 // httpc post -h key:value -d "inline data" url
 
@@ -453,9 +458,8 @@ public class httpcServer {
                                             // For debugging
                                             for (String keyString : headerKeyValuePairHashMap.keySet())
                                                 System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
-                                            postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, inlineDataString);
-                                            return redirectionResultString + "\n" + inlineDataString + " " + urlString + " 3";
-//                                                return someMethods(someStrings);
+
+                                            return redirectionResultString + "\n" + postHttpResponse(urlString, headerKeyValuePairHashMap, inlineDataString);
                                         } else {
                                             return "Invalid syntax";
                                         }
@@ -501,10 +505,8 @@ public class httpcServer {
                                 // For debugging
                                 for (String keyString : headerKeyValuePairHashMap.keySet())
                                     System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
-                                postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, jsonFileContentString);
 
-                                return redirectionResultString + "\n" + jsonFileContentString + " " + urlString + " 4";
-//                                    return someMethods(someStrings);
+                                return redirectionResultString + "\n" + postHttpResponse(urlString, headerKeyValuePairHashMap, jsonFileContentString);
                             } else {
                                 return "Invalid syntax";
                             }
@@ -531,10 +533,9 @@ public class httpcServer {
                                 urlString = redirectedURL;
 
                             // Provided data
-                            // verbose output: hasVerbosityString
                             // url: urlString
-                            postHttpResponse(urlString, hasVerbosityString, headerKeyValuePairHashMap, null);
-                            return redirectionResultString + "\n" + urlString + " 1";
+
+                            return redirectionResultString + "\n" + postHttpResponse(urlString, headerKeyValuePairHashMap, null);
                         }
                     } else if (compareStringsWithChar("-v", commandLineStringArray[1])) {
                         // httpc -v url -o file.txt
@@ -816,33 +817,30 @@ public class httpcServer {
         }
     }
 
-    private String postHttpResponse(String urlString, boolean hasVerbosityString, HashMap<String, String> headerKeyValuePairHashMap, String jsonData) {
+    private String postHttpResponse(String urlString, HashMap<String, String> headerKeyValuePairHashMap, String jsonData) {
         StringBuilder stringBuilder;
-        //byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
+
         try {
             stringBuilder = new StringBuilder();
             URL url = new URL(urlString);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setDoOutput(true);
             connection.setRequestMethod("POST");
-            connection.setRequestProperty("User-Agent", "Java client");
+
+            // Set all the header parameters
             for (String keyString : headerKeyValuePairHashMap.keySet())
                 connection.setRequestProperty(keyString, headerKeyValuePairHashMap.get(keyString));
 
-            String headerString = connection.getHeaderField("Server") +
-                    connection.getHeaderField("Date") + "\n" +
-                    connection.getHeaderField("Content-Type") + "\n" +
-                    connection.getHeaderField("Content-Length") + "\n" +
-                    connection.getHeaderField("Connection") + "\n" +
-                    connection.getHeaderField("Access-Control-Allow-Origin") + "\n" +
-                    connection.getHeaderField("Access-Control-Allow-Credentials");
+            // The Content-Type is fixed
+            connection.setRequestProperty("Content-Type", "application/json");
 
-            System.out.println(headerString);
-
-            try (DataOutputStream wr = new DataOutputStream(connection.getOutputStream())) {
-                byte[] input = jsonData.getBytes("utf-8");
-                wr.write(input, 0, input.length);
+            if (jsonData != null) {
+                try (DataOutputStream wr = new DataOutputStream(connection.getOutputStream())) {
+                    byte[] input = jsonData.getBytes("utf-8");
+                    wr.write(input, 0, input.length);
+                }
             }
+
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             String line;
 
@@ -850,15 +848,14 @@ public class httpcServer {
                 stringBuilder.append(line);
                 stringBuilder.append(System.lineSeparator());
             }
-            System.out.println(stringBuilder.toString()); //Displays output
+
             bufferedReader.close();
         } catch (Exception e) {
+            System.out.println(e);
             return "Post Http response error";
         }
 
         return stringBuilder.toString();
-        //to write functionality
-        // return urlString;
     }
 
     public static void main(String[] args) throws IOException {

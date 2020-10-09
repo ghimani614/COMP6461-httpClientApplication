@@ -1,49 +1,18 @@
-# Java networking examples
+# Lab Assignment 1
 
-There are several examples to help you be familiar with networking programming in JDK. It is recommended to use common tools to develop your assignment. Therefore we use Maven for this example.
+This Java project implements all the functionalities of COMP 6461 Lab Assignment 1, including all the optional tasks(bonus marks). It was developed based on the blocking echo server template.
 
 ## Requirement
 1. [Oracle JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 2. [Apache Maven](https://maven.apache.org/) 
+3. [Intellij Community 2020.2](https://www.jetbrains.com/idea/download/) 
 
-## Structure
-There are 5 applications in this example for the echo and time protocols.
-
-### Echo Protocol
-- **Blocking Echo Server** - an implementation of the echo server using a blocking NIO socket
-- **Blocking Echo Client** - an implementation of the echo client using a blocking NIO socket
-
-## Compile and package
-1. Open the terminal and cd to the `netsample` directory
-2. Run `mvn package` to compile and package this example
-You should see two jar files in the `target` directory: one with all dependencies (we use logging and argument parse libraries); one without dependencies.
-
-## Run the sample applications
-Use the following the commands to run applications.
-
-### Blocking Echo Server
-`java -cp target/netsample-1.0-SNAPSHOT-jar-with-dependencies.jar ca.concordia.echo.BlockingEchoServer --port 8007`
-You should see the message 'ca.concordia.echo.BlockingEchoServer - EchoServer is listening at /0:0:0:0:0:0:0:0:8007' which means your echo server is ready.
-
-### Blocking Echo Client
-Once your echo server client is listening, you can use the echo client by this command
-`java -cp target/netsample-1.0-SNAPSHOT-jar-with-dependencies.jar ca.concordia.echo.BlockingEchoClient --host localhost --port 8007`
-If there is no error, you should be able to type into your console; and receive an echo from the echo server.
-
-
-## Description
-This Java project implements all the functionalities of COMP 6461 Lab Assignment 1, including all the optional tasks(bonus marks). 
+Third-party libraries:
+1. JSON.simple 1.1: Used for reading and parsing JSON files.
 
 
 ## Configuration
-This project was developed using Intellij, so Intellij is required. No additional configuration is required, Intellij IDE will handle and build the project automatically. 
-
-Environment:
-1. Java 9 or later
-2. Intellij Community 2020.2
-
-Third-party libraries:
-1. JSON.simple 1.1: Used for reading and parsing JSON files. 
+Use Intellij IDE to open the project, navigate to netsample/src/main/java/ca/concordia/httpc, there are httpcServer class and httpc class. Before running the program, make sure json-simple-1.1.jar is added to dependency. It is already added by default, if it is not, right click netsample/lib folder and select "Add as Library" option in Intellij. The server should be run before the client, so right click httpcServer class and select "Run 'httpcServer.main()'" in the project view, then use the same way to run httpc.
 
 
 ## Implementation
@@ -52,3 +21,42 @@ Rules:
 2. It is not allowed to have multiple space characters between each term, like "httpc  help   get ". Starting with space is invalid, it must starts with "httpc" without any exception.
 3. URL has to be wrapped by a pair of apostrophes, like 'http://httpbin.org/post'.
 4. This program has assumed Content-Type to be application/json in any situation, changing Content-Type using POST command has no effect.
+
+
+## Examples
+All the available command lines are listed here.
+
+Helper
+1. httpc help
+2. httpc help get
+3. httpc help post
+
+GET
+1. httpc get url
+    httpc get 'http://httpbin.org/get?course=networking&assignment=1'
+2. httpc get -v url
+    httpc get -v 'http://httpbin.org/get?course=networking&assignment=1'
+3. httpc get -h key:value url
+    httpc get -h key1:value1 key2:value2 'http://httpbin.org/get?course=networking&assignment=1'
+
+POST
+1. httpc post url
+    httpc post 'http://httpbin.org/post'
+2. httpc post -h key:value url
+    httpc post -h key1:value1 key2:value2 'http://httpbin.org/post'
+3. httpc post -h key:value -d "inline data" url
+    httpc post -h key1:value1 key2:value2 -d '{"Assignment": 1}' 'http://httpbin.org/post'
+4. httpc post -h key:value -f "file name" url
+    httpc post -h key1:value1 key2:value2 -f Data.json 'http://httpbin.org/post'
+5. httpc post -v url
+    httpc post -v 'http://httpbin.org/post'
+6. httpc post -v -h key:value url
+    httpc post -v -h key1:value1 key2:value2 'http://httpbin.org/post'
+7. httpc post -v -h key:value -d "inline data" url
+    httpc post -v -h key1:value1 key2:value2 -d '{"Assignment": 1}' 'http://httpbin.org/post'
+8. httpc post -v -h key:value -f "file name" url
+    httpc post -v -h key1:value1 key2:value2 -f Data.json 'http://httpbin.org/post'
+
+
+## Detail
+1. On macOS, if user gives the txt file an empty name using command: "httpc -v 'http://httpbin.org/get?course=networking&assignment=1' -o .txt", the output txt file may become a hidden file. It is necessary to press shift + command + . to show and access hidden files. 

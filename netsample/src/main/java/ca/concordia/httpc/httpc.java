@@ -27,8 +27,7 @@ public class httpc {
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
-//            ByteBuffer buf = utf8.encode(line);
-            ByteBuffer buf = ByteBuffer.allocate(1024);
+            ByteBuffer buf = ByteBuffer.allocate(2048);
 
             int n = socket.write(ByteBuffer.wrap(line.getBytes(StandardCharsets.UTF_8)));
             buf.clear();
@@ -48,7 +47,7 @@ public class httpc {
     private static void runClient(SocketAddress endpoint) throws IOException {
         try (SocketChannel socket = SocketChannel.open()) {
             socket.connect(endpoint);
-            System.out.println("Type any thing then ENTER. Press Ctrl+C to terminate");
+            System.out.println("httpc command: Type any thing then ENTER.");
             readEchoAndRepeat(socket);
         }
     }
