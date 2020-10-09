@@ -197,7 +197,7 @@ public class httpcServer {
                                     // For debugging
                                     for (String keyString : headerKeyValuePairHashMap.keySet())
                                         System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
-
+                                    postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,null);
                                     return redirectionResultString + "\n" + verbosityString + "\n" + urlString + " 6";
 //                            return someMethods(someStrings);
                                 } else if (compareStringsWithChar("-d", commandLineStringArray[commandLineStringArray.length - 3])) {
@@ -267,6 +267,7 @@ public class httpcServer {
                                                 for (String keyString : headerKeyValuePairHashMap.keySet())
                                                     System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
 
+                                                postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,inlineDataString);
                                                 return redirectionResultString + "\n" + inlineDataString + " " + urlString + " 7";
 //                                                return someMethods(someStrings);
                                             } else {
@@ -315,6 +316,7 @@ public class httpcServer {
                                     for (String keyString : headerKeyValuePairHashMap.keySet())
                                         System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
 
+                                    postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,jsonFileContentString);
                                     return redirectionResultString + "\n" + jsonFileContentString + " " + urlString + " 8";
 //                                    return someMethods(someStrings);
                                 } else {
@@ -349,7 +351,7 @@ public class httpcServer {
                                 // Provided data
                                 // verbose output: hasVerbosityString
                                 // url: urlString
-
+                                postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,null);
                                 return redirectionResultString + "\n" + verbosityString + "\n" + urlString + " 5";
                             }
                         } else if (compareStringsWithChar("-h", commandLineStringArray[2])) {
@@ -382,7 +384,7 @@ public class httpcServer {
                                 // For debugging
                                 for (String keyString : headerKeyValuePairHashMap.keySet())
                                     System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
-
+                                postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,null);
                                 return redirectionResultString + "\n" + urlString + " 2";
 //                                return someMethods(someStrings);
                             } else if (compareStringsWithChar("-d", commandLineStringArray[commandLineStringArray.length - 3])) {
@@ -451,7 +453,7 @@ public class httpcServer {
                                             // For debugging
                                             for (String keyString : headerKeyValuePairHashMap.keySet())
                                                 System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
-
+                                            postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,inlineDataString);
                                             return redirectionResultString + "\n" + inlineDataString + " " + urlString + " 3";
 //                                                return someMethods(someStrings);
                                         } else {
@@ -499,7 +501,7 @@ public class httpcServer {
                                 // For debugging
                                 for (String keyString : headerKeyValuePairHashMap.keySet())
                                     System.out.println("key: " + keyString + " value: " + headerKeyValuePairHashMap.get(keyString));
-
+                                postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,jsonFileContentString);
 
                                 return redirectionResultString + "\n" + jsonFileContentString + " " + urlString + " 4";
 //                                    return someMethods(someStrings);
@@ -512,7 +514,7 @@ public class httpcServer {
                             // Check if it contains the exact number of terms
                             if (commandLineStringArray.length != 3)
                                 return "Invalid syntax";
-
+                            //to check and accept JSON format
                             if (!verifyURL(commandLineStringArray[2]))
                                 return "Invalid syntax";
 
@@ -531,7 +533,7 @@ public class httpcServer {
                             // Provided data
                             // verbose output: hasVerbosityString
                             // url: urlString
-
+                            postHttpResponse(urlString,hasVerbosityString,headerKeyValuePairHashMap,null);
                             return redirectionResultString + "\n" + urlString + " 1";
                         }
                     } else if (compareStringsWithChar("-v", commandLineStringArray[1])) {
@@ -814,37 +816,49 @@ public class httpcServer {
         }
     }
 
-    private String postHttpResponse(String urlString) {
-//        StringBuilder stringBuilder;
-//        String urlParameters = null;    // I need to get the parameters here ???
-//        byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
-//        try {
-//            stringBuilder = new StringBuilder();
-//            URL url = new URL(urlString);
-//            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-//            connection.setDoOutput(true);
-//            connection.setRequestMethod("POST");
-//            connection.setRequestProperty("User-Agent", "Java client");
-//
-//            try (var wr = new DataOutputStream(connection.getOutputStream())) {
-//                //   wr.write(postData);   //this shows error ??
-//            }
-//            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-//            String line;
-//
-//            while ((line = bufferedReader.readLine()) != null) {
-//                stringBuilder.append(line);
-//                stringBuilder.append(System.lineSeparator());
-//            }
-//            System.out.println(stringBuilder.toString()); //Displays output
-//            bufferedReader.close();
-//        } catch (Exception e) {
-//            return "Post Http response error";
-//        }
-//
-//        return stringBuilder.toString();
+    private String postHttpResponse(String urlString, boolean hasVerbosityString, HashMap<String, String> headerKeyValuePairHashMap, String jsonData) {
+        StringBuilder stringBuilder;
+        //byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
+        try {
+            stringBuilder = new StringBuilder();
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoOutput(true);
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("User-Agent", "Java client");
+            for (String keyString : headerKeyValuePairHashMap.keySet())
+            connection.setRequestProperty(keyString, headerKeyValuePairHashMap.get(keyString));
+
+            String headerString = connection.getHeaderField("Server")+
+            connection.getHeaderField("Date")+ "\n" +
+            connection.getHeaderField("Content-Type")+ "\n" +
+            connection.getHeaderField("Content-Length")+ "\n" +
+            connection.getHeaderField("Connection")+ "\n" +
+            connection.getHeaderField("Access-Control-Allow-Origin")+ "\n" +
+            connection.getHeaderField("Access-Control-Allow-Credentials");
+
+            System.out.println(headerString);
+
+            try (DataOutputStream wr = new DataOutputStream(connection.getOutputStream())) {
+                byte[] input = jsonData.getBytes("utf-8");
+                wr.write(input, 0, input.length);
+            }
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String line;
+
+            while ((line = bufferedReader.readLine()) != null) {
+                stringBuilder.append(line);
+                stringBuilder.append(System.lineSeparator());
+            }
+            System.out.println(stringBuilder.toString()); //Displays output
+            bufferedReader.close();
+        } catch (Exception e) {
+            return "Post Http response error";
+        }
+
+        return stringBuilder.toString();
         //to write functionality
-        return urlString;
+       // return urlString;
     }
 
     public static void main(String[] args) throws IOException {
